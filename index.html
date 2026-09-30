@@ -1,0 +1,950 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>جولة في بوابة</title>
+<meta name="description" content="عرض تفاعلي لمنصة بوابة: تطبيق الساكن وجهاز البوابة ولوحة الإدارة، متصلة ببعضها.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Almarai:wght@700;800&family=Tajawal:wght@400;500;700;800&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<style>
+/* Layout: a guide rail on top, then the three connected devices side by side (tabs on narrow screens).
+   Palette and type are the product's own "Warm & Neighborly" identity (CLAUDE.md §7), light only by design. */
+:root {
+  color-scheme: light;
+  --ground: #FFF8F1; --surface: #FFFFFF; --ink: #2A1E17; --muted: #6E5F55;
+  --line: #F1E8E0; --lineStrong: #D9CEC6;
+  --primary: #C2502F; --primaryPressed: #9E3E22; --primarySoft: #FBE3D9; --primaryInk: #8A2E17;
+  --success: #2E7D4F; --successSoft: #E0F1E6; --successInk: #1D5A38;
+  --info: #2F6FB0; --infoSoft: #E1ECF7; --infoInk: #1E4A73;
+  --warning: #D98A1C; --warningSoft: #FCEFC7; --warningInk: #7A4B0A;
+  --danger: #B42318; --dangerSoft: #FFF1EE; --dangerBorder: #E7A79B;
+  --stage: #F3E9DF;
+  --shadow: 0 2px 10px rgba(42,30,23,0.06);
+  --display: "Almarai", "Tajawal", "Segoe UI", Tahoma, sans-serif;
+  --body: "Tajawal", "Segoe UI", Tahoma, sans-serif;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--ground); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.6; }
+button, input, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid var(--primaryPressed); outline-offset: 2px; }
+h1, h2, h3 { font-family: var(--display); line-height: 1.4; margin: 0; text-wrap: balance; }
+.wrap { max-width: 1640px; margin: 0 auto; padding-inline: 20px; padding-block: 16px 40px; display: grid; gap: 16px; }
+.num { font-variant-numeric: tabular-nums; }
+[data-lucide], svg.lucide { width: 20px; height: 20px; stroke-width: 1.8; flex: none; }
+
+/* Top bar */
+.top { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; justify-content: space-between; }
+.brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.brand h1 { font-size: 24px; font-weight: 800; }
+.brand p { margin: 0; color: var(--muted); font-size: 13px; }
+.mark { width: 40px; height: 40px; flex: none; }
+.top-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.seg { display: inline-flex; background: var(--surface); border: 1px solid var(--lineStrong); border-radius: 22px; padding: 3px; }
+.seg button { border: 0; background: transparent; padding: 8px 16px; border-radius: 20px; font-weight: 700; min-height: 40px; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
+.ghost { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--lineStrong); background: var(--surface); border-radius: 14px; padding: 8px 14px; min-height: 44px; font-weight: 700; }
+
+/* Guide */
+.guide { background: var(--surface); border-radius: 24px; box-shadow: var(--shadow); padding: 18px 20px; display: grid; gap: 14px; }
+.chapters { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; border-radius: 22px; padding: 4px 12px; font-size: 13px; font-weight: 700; background: var(--ground); color: var(--muted); border: 1px solid var(--line); }
+.chip.done { background: var(--successSoft); color: var(--successInk); border-color: transparent; }
+.chip.now { background: var(--primarySoft); color: var(--primaryInk); border-color: transparent; }
+.step-row { display: flex; flex-wrap: wrap; gap: 14px 24px; align-items: center; justify-content: space-between; }
+.step-text { min-width: 0; flex: 1 1 420px; display: grid; gap: 4px; }
+.step-meta { font-size: 13px; color: var(--muted); display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.where { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; color: var(--primaryPressed); }
+.step-text p { margin: 0; font-size: 17px; max-width: 72ch; }
+.step-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 14px; padding: 10px 20px; min-height: 48px; font-weight: 800; background: var(--primary); color: #fff; }
+.btn:hover { background: var(--primaryPressed); }
+.btn.out { background: var(--surface); color: var(--ink); border: 1px solid var(--lineStrong); }
+.btn.out:hover { background: var(--ground); }
+.progress { height: 6px; background: var(--line); border-radius: 6px; overflow: hidden; }
+.progress i { display: block; height: 100%; background: var(--primary); border-radius: 6px; transition: width .4s; }
+
+/* Tabs (narrow) */
+.tabs { display: none; gap: 8px; overflow-x: auto; }
+.tabs button { position: relative; flex: 1 0 auto; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid var(--lineStrong); background: var(--surface); border-radius: 14px; padding: 8px 14px; min-height: 48px; font-weight: 700; }
+.tabs button[aria-selected="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.tabs .dot { position: absolute; top: 6px; inset-inline-end: 8px; width: 10px; height: 10px; border-radius: 50%; background: var(--primary); border: 2px solid var(--surface); }
+
+/* Stage */
+.stage { background: var(--stage); border-radius: 32px; padding: 24px; display: grid; grid-template-columns: 372px minmax(420px, 1fr) minmax(460px, 1.3fr); gap: 24px; align-items: start; }
+.device { display: grid; gap: 10px; min-width: 0; }
+.device-label { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 32px; }
+.device-label h2 { font-size: 17px; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+.device-label small { color: var(--muted); font-size: 13px; font-family: var(--body); font-weight: 500; }
+.here { background: var(--primary); color: #fff; border-radius: 22px; padding: 2px 12px; font-size: 13px; font-weight: 800; }
+.frame { position: relative; background: var(--ink); overflow: hidden; }
+.frame.phone { border-radius: 46px; padding: 11px; width: 100%; max-width: 372px; justify-self: center; }
+.frame.tablet { border-radius: 30px; padding: 14px; }
+.frame.laptop { border-radius: 18px; padding: 10px 10px 14px; }
+.screen { position: relative; background: var(--ground); height: 740px; overflow: hidden; display: flex; flex-direction: column; }
+.phone .screen { border-radius: 36px; }
+.tablet .screen { border-radius: 18px; }
+.laptop .screen { border-radius: 10px; }
+.scroll { flex: 1; overflow-y: auto; overflow-x: hidden; }
+
+/* Tour highlight */
+.hot { position: relative; z-index: 2; box-shadow: 0 0 0 3px var(--surface), 0 0 0 6px var(--primary) !important; animation: pulse 1.6s ease-in-out infinite; }
+@keyframes pulse { 50% { box-shadow: 0 0 0 3px var(--surface), 0 0 0 10px rgba(194,80,47,.35) !important; } }
+@media (prefers-reduced-motion: reduce) { .hot { animation: none; } .toast, .push { animation: none !important; } }
+
+/* ============ Phone (resident) ============ */
+.statusbar { display: flex; justify-content: space-between; align-items: center; padding: 10px 24px 4px; font-size: 13px; font-weight: 700; }
+.statusbar.on-brand { background: var(--primary); color: #fff; }
+.statusbar span { display: inline-flex; gap: 4px; align-items: center; }
+.statusbar svg { width: 14px; height: 14px; }
+.r-head { background: var(--primary); color: #fff; padding: 8px 20px 84px; border-radius: 0 0 32px 32px; display: grid; gap: 2px; }
+.r-head .cname { font-family: var(--display); font-weight: 800; font-size: 15px; opacity: 1; }
+.r-head h3 { font-size: 22px; font-weight: 800; }
+.r-head p { margin: 0; font-size: 14px; }
+.r-body { padding: 0 20px 24px; display: grid; gap: 14px; }
+.card { background: var(--surface); border-radius: 20px; box-shadow: var(--shadow); padding: 18px; display: grid; gap: 10px; }
+.visit-card { margin-top: -64px; }
+.visit-card h4 { margin: 0; font-family: var(--display); font-size: 17px; font-weight: 800; }
+.visit-card p { margin: 0; color: var(--muted); font-size: 14px; }
+.pbtn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; border: 0; border-radius: 14px; min-height: 52px; font-weight: 800; font-size: 16px; background: var(--primary); color: #fff; }
+.pbtn.out { background: var(--surface); color: var(--ink); border: 1.5px solid var(--lineStrong); }
+.pbtn.ok { background: var(--success); }
+.pbtn:disabled { opacity: .45; cursor: default; }
+.sec-title { font-family: var(--display); font-size: 17px; font-weight: 800; margin: 6px 0 0; }
+.rows { background: var(--surface); border-radius: 20px; box-shadow: var(--shadow); padding: 4px 16px; }
+.row { display: flex; gap: 12px; align-items: center; padding: 12px 0; }
+.row + .row { border-top: 1px solid var(--line); }
+.row .grow { flex: 1; min-width: 0; display: grid; }
+.row b { font-weight: 700; }
+.row small { color: var(--muted); font-size: 13px; }
+.badge { flex: none; border-radius: 22px; padding: 2px 10px; font-size: 13px; font-weight: 700; white-space: nowrap; }
+.b-warn { background: var(--warningSoft); color: var(--warningInk); }
+.b-ok { background: var(--successSoft); color: var(--successInk); }
+.b-info { background: var(--infoSoft); color: var(--infoInk); }
+.b-mute { background: var(--line); color: var(--muted); }
+.b-brand { background: var(--primarySoft); color: var(--primaryInk); }
+.b-danger { background: var(--dangerSoft); color: var(--danger); }
+.tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.tile { border: 0; border-radius: 20px; padding: 16px; min-height: 104px; display: grid; align-content: space-between; justify-items: start; text-align: start; font-family: var(--display); font-weight: 800; font-size: 16px; }
+.tile svg { width: 28px; height: 28px; }
+.t-info { background: var(--infoSoft); color: var(--infoInk); }
+.t-warn { background: var(--warningSoft); color: var(--warningInk); }
+.sos { position: relative; overflow: hidden; border: 1.5px solid var(--dangerBorder); background: var(--dangerSoft); color: var(--danger); border-radius: 20px; min-height: 64px; width: 100%; font-family: var(--display); font-weight: 800; font-size: 18px; display: flex; align-items: center; justify-content: center; gap: 8px; touch-action: none; user-select: none; -webkit-user-select: none; }
+.sos .fill { position: absolute; inset: 0; background: rgba(180,35,24,.16); transform-origin: right; transform: scaleX(var(--p, 0)); }
+.sos span, .sos svg { position: relative; }
+.hint { color: var(--muted); font-size: 13px; text-align: center; margin: -6px 0 0; }
+.sub-head { display: flex; align-items: center; gap: 10px; padding: 8px 16px 12px; }
+.back { border: 0; background: transparent; width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; }
+.back svg { transform: scaleX(-1); }
+.sub-head h3 { font-size: 22px; font-weight: 800; }
+.field { display: grid; gap: 6px; }
+.field label { font-size: 13px; color: var(--muted); font-weight: 700; }
+.input { width: 100%; border: 1px solid var(--lineStrong); background: var(--surface); border-radius: 14px; padding: 12px 14px; font-size: 18px; font-weight: 700; min-height: 52px; }
+textarea.input { font-size: 15px; font-weight: 500; min-height: 88px; resize: vertical; }
+.err { color: var(--primaryInk); font-size: 13px; font-weight: 700; margin: 0; }
+.opts { display: flex; flex-wrap: wrap; gap: 8px; }
+.opt { border: 1px solid var(--lineStrong); background: var(--surface); border-radius: 22px; padding: 8px 14px; min-height: 44px; font-weight: 700; font-size: 14px; }
+.opt[aria-pressed="true"] { background: var(--primarySoft); color: var(--primaryInk); border-color: transparent; }
+.stepper { display: flex; align-items: center; gap: 14px; }
+.stepper button { width: 48px; height: 48px; border-radius: 14px; border: 1px solid var(--lineStrong); background: var(--surface); font-size: 22px; font-weight: 800; }
+.stepper output { min-width: 36px; text-align: center; font-family: var(--display); font-size: 26px; font-weight: 800; }
+.partners { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.partner { border: 1px solid var(--line); background: var(--surface); border-radius: 20px; padding: 14px 6px; display: grid; justify-items: center; gap: 8px; font-weight: 700; min-height: 110px; }
+.pcircle { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; font-family: var(--display); font-weight: 800; font-size: 22px; color: #fff; }
+.pc-info { background: var(--info); } .pc-success { background: var(--success); } .pc-warning { background: var(--warning); color: var(--ink); }
+.status-card { border-radius: 20px; padding: 14px 16px; display: flex; gap: 10px; align-items: flex-start; font-weight: 700; }
+.sc-danger { background: var(--dangerSoft); color: var(--danger); border: 1px solid var(--dangerBorder); }
+.sc-ok { background: var(--successSoft); color: var(--successInk); }
+.push { position: absolute; top: 40px; inset-inline: 10px; z-index: 20; background: var(--surface); border-radius: 20px; box-shadow: 0 8px 28px rgba(42,30,23,.18); padding: 12px 14px; display: flex; gap: 10px; align-items: flex-start; border: 0; text-align: start; animation: drop .35s ease-out; }
+@keyframes drop { from { transform: translateY(-24px); opacity: 0; } }
+.push .appicon { width: 36px; height: 36px; border-radius: 10px; background: var(--primary); display: grid; place-items: center; flex: none; }
+.push .appicon svg { color: #fff; width: 20px; height: 20px; }
+.push b { display: block; font-size: 13px; }
+.push span { display: block; font-size: 14px; line-height: 1.5; }
+.push small { color: var(--muted); font-size: 12px; }
+.ann { display: grid; gap: 4px; padding: 14px 0; }
+.ann + .ann { border-top: 1px solid var(--line); }
+.ann p { margin: 0; color: var(--muted); font-size: 14px; }
+.sheet { position: absolute; inset: 0; z-index: 15; background: rgba(42,30,23,.35); display: flex; align-items: flex-end; }
+.sheet .panel { background: var(--surface); width: 100%; border-radius: 24px 24px 0 0; padding: 20px; display: grid; gap: 12px; }
+.sheet h4 { margin: 0; font-family: var(--display); font-size: 17px; }
+.types { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.types button { min-height: 56px; border-radius: 14px; border: 1px solid var(--dangerBorder); background: var(--dangerSoft); color: var(--danger); font-weight: 800; font-size: 16px; }
+
+/* ============ Gate (tablet) ============ */
+.g-head { background: var(--ink); color: #fff; padding: 14px 18px; display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; justify-content: space-between; }
+.g-head h3 { font-size: 19px; font-weight: 800; }
+.g-head small { display: block; font-size: 13px; opacity: .9; }
+.net { display: inline-flex; align-items: center; gap: 6px; border-radius: 22px; padding: 6px 12px; font-weight: 800; font-size: 13px; border: 0; min-height: 36px; }
+.net.on { background: var(--successSoft); color: var(--successInk); }
+.net.off { background: var(--warningSoft); color: var(--warningInk); }
+.net svg { width: 16px; height: 16px; }
+.g-banner { background: var(--warningSoft); color: var(--warningInk); padding: 10px 18px; font-weight: 700; font-size: 14px; }
+.g-body { padding: 16px 18px; display: grid; gap: 14px; }
+.g-search { display: flex; align-items: center; gap: 8px; background: var(--surface); border: 2px solid var(--lineStrong); border-radius: 14px; padding: 0 14px; min-height: 56px; }
+.g-search input { border: 0; outline: 0; flex: 1; min-width: 0; font-size: 18px; font-weight: 700; background: transparent; }
+.g-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.g-tabs button { min-height: 52px; border-radius: 14px; border: 2px solid var(--lineStrong); background: var(--surface); font-weight: 800; font-size: 15px; }
+.g-tabs button[aria-selected="true"] { background: var(--ink); color: #fff; border-color: var(--ink); }
+.g-card { background: var(--surface); border-radius: 20px; box-shadow: var(--shadow); padding: 14px 16px; display: flex; gap: 12px; align-items: center; }
+.g-card .grow { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.g-card b { font-size: 19px; font-family: var(--display); font-weight: 800; }
+.g-card small { color: var(--muted); font-size: 14px; }
+.g-card .unitbig { font-weight: 800; color: var(--ink); font-size: 15px; }
+.gbtn { min-height: 56px; min-width: 112px; border: 0; border-radius: 14px; font-weight: 800; font-size: 18px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 0 16px; }
+.gbtn.ok { background: var(--success); color: #fff; }
+.gbtn.out { background: var(--surface); border: 2px solid var(--lineStrong); color: var(--ink); }
+.gbtn.info { background: var(--info); color: #fff; width: 100%; }
+.gbtn.dark { background: var(--ink); color: #fff; width: 100%; }
+.gbtn:disabled { opacity: .45; cursor: default; }
+.g-empty { text-align: center; color: var(--muted); padding: 24px; }
+.keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; direction: ltr; }
+.keypad button { min-height: 60px; border-radius: 14px; border: 2px solid var(--lineStrong); background: var(--surface); font-family: var(--display); font-size: 24px; font-weight: 800; }
+.unit-display { text-align: center; font-family: var(--display); font-size: 34px; font-weight: 800; min-height: 60px; background: var(--surface); border-radius: 14px; border: 2px solid var(--lineStrong); display: grid; place-items: center; }
+.match { border-radius: 14px; padding: 12px 14px; font-weight: 800; display: flex; gap: 8px; align-items: center; }
+.match.yes { background: var(--successSoft); color: var(--successInk); }
+.match.no { background: var(--warningSoft); color: var(--warningInk); }
+.alert { position: absolute; inset: 0; z-index: 30; background: var(--danger); color: #fff; display: grid; place-content: center; justify-items: center; gap: 14px; text-align: center; padding: 24px; }
+.alert svg { width: 64px; height: 64px; }
+.alert h3 { font-size: 44px; font-weight: 800; }
+.alert p { margin: 0; font-size: 20px; font-weight: 700; }
+.alert button { min-height: 64px; min-width: 240px; border: 0; border-radius: 14px; background: #fff; color: var(--danger); font-family: var(--display); font-weight: 800; font-size: 20px; margin-top: 10px; }
+.toast { position: absolute; bottom: 18px; inset-inline: 18px; z-index: 25; background: var(--ink); color: #fff; border-radius: 14px; padding: 12px 16px; font-weight: 700; animation: drop .3s ease-out; }
+
+/* ============ Dashboard (laptop) ============ */
+.d-top { background: var(--surface); border-bottom: 1px solid var(--line); padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.d-top .brandline { display: flex; align-items: center; gap: 8px; font-family: var(--display); font-weight: 800; }
+.d-top .brandline svg { width: 26px; height: 26px; }
+.d-top small { color: var(--muted); }
+.d-shell { flex: 1; display: grid; grid-template-columns: 168px 1fr; min-height: 0; }
+.d-nav { background: var(--surface); border-inline-start: 1px solid var(--line); padding: 12px 8px; display: grid; align-content: start; gap: 4px; }
+.d-nav button { display: flex; align-items: center; gap: 8px; border: 0; background: transparent; border-radius: 14px; padding: 8px 10px; min-height: 44px; font-weight: 700; text-align: start; font-size: 14px; }
+.d-nav button[aria-current="page"] { background: var(--primarySoft); color: var(--primaryInk); }
+.d-nav button svg { width: 18px; height: 18px; }
+.d-main { overflow-y: auto; padding: 16px; display: grid; gap: 14px; align-content: start; min-width: 0; }
+.d-main h3 { font-size: 22px; font-weight: 800; }
+.d-desc { margin: -8px 0 0; color: var(--muted); font-size: 14px; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
+.kpi { background: var(--surface); border-radius: 20px; box-shadow: var(--shadow); padding: 12px 14px; display: grid; gap: 2px; }
+.kpi b { font-family: var(--display); font-size: 28px; font-weight: 800; line-height: 1.2; }
+.kpi small { color: var(--muted); font-size: 13px; }
+.table-card { background: var(--surface); border-radius: 20px; box-shadow: var(--shadow); overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th { text-align: start; color: var(--muted); font-weight: 700; font-size: 13px; padding: 10px 12px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+td { padding: 10px 12px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+tr.new td { background: var(--successSoft); }
+.emg { border-radius: 20px; padding: 12px 14px; display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; justify-content: space-between; font-weight: 800; }
+.emg.raised { background: var(--danger); color: #fff; }
+.emg.ack { background: var(--dangerSoft); color: var(--danger); border: 1px solid var(--dangerBorder); }
+.emg button { border: 0; border-radius: 14px; min-height: 40px; padding: 0 14px; font-weight: 800; background: var(--surface); color: var(--danger); }
+.item-card { background: var(--surface); border-radius: 20px; box-shadow: var(--shadow); padding: 16px; display: grid; gap: 10px; }
+.item-card header { display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; align-items: center; }
+.item-card h4 { margin: 0; font-family: var(--display); font-size: 17px; }
+.item-card small { color: var(--muted); }
+.wa { background: var(--successSoft); color: var(--ink); border-radius: 14px 14px 4px 14px; padding: 12px 14px; white-space: pre-line; font-size: 14px; line-height: 1.7; }
+.wa-head { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--successInk); font-weight: 800; }
+.dbtn { display: inline-flex; align-items: center; gap: 6px; border: 0; border-radius: 14px; min-height: 44px; padding: 0 16px; font-weight: 800; background: var(--primary); color: #fff; }
+.dbtn.out { background: var(--surface); color: var(--ink); border: 1px solid var(--lineStrong); }
+.dbtn.ok { background: var(--success); }
+.dbtn:disabled { opacity: .45; cursor: default; }
+.check { display: flex; gap: 8px; align-items: center; font-weight: 700; min-height: 44px; }
+.check input { width: 20px; height: 20px; accent-color: var(--primary); }
+
+/* Finish panel */
+.finish { display: grid; gap: 10px; }
+.finish ul { margin: 0; padding-inline-start: 20px; display: grid; gap: 4px; columns: 2; }
+
+@media (max-width: 1239px) {
+  .tabs { display: flex; }
+  .stage { grid-template-columns: minmax(0, 1fr); padding: 16px; border-radius: 24px; }
+  .device { display: none; }
+  .device.show { display: grid; }
+  .frame.tablet, .frame.laptop { max-width: 760px; width: 100%; justify-self: center; }
+}
+@media (max-width: 560px) {
+  .wrap { padding-inline: 16px; }
+  .stage { padding: 10px; }
+  .screen { height: 660px; }
+  .frame.phone { padding: 8px; border-radius: 40px; }
+  .frame.tablet { padding: 8px; border-radius: 22px; }
+  .frame.laptop { padding: 6px 6px 10px; }
+  .d-shell { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+  .d-nav { grid-auto-flow: column; grid-auto-columns: max-content; overflow-x: auto; border-inline-start: 0; border-bottom: 1px solid var(--line); }
+  .step-text p { font-size: 16px; }
+  .finish ul { columns: 1; }
+  .gbtn { min-width: 96px; font-size: 16px; }
+}
+</style>
+</head>
+<body>
+<div class="wrap" dir="rtl" lang="ar">
+  <header class="top">
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 40 40" aria-hidden="true"><path d="M8 34V8h24v26" fill="none" stroke="#C2502F" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/></svg>
+      <div>
+        <h1>جولة في بوابة</h1>
+        <p>تطبيق الساكن وجهاز البوابة ولوحة الإدارة، متصلة ببعضها. البيانات كلها تجريبية.</p>
+      </div>
+    </div>
+    <div class="top-actions">
+      <div class="seg" role="group" aria-label="طريقة العرض">
+        <button type="button" id="mode-tour" data-act="mode" data-v="tour">جولة موجّهة</button>
+        <button type="button" id="mode-free" data-act="mode" data-v="free">تجربة حرة</button>
+      </div>
+      <button type="button" class="ghost" id="sound" data-act="sound"></button>
+      <button type="button" class="ghost" id="reset" data-act="reset"><i data-lucide="rotate-ccw"></i>إعادة البدء</button>
+    </div>
+  </header>
+
+  <section class="guide" id="guide" aria-live="polite"></section>
+
+  <nav class="tabs" id="tabs" role="tablist" aria-label="الأجهزة"></nav>
+
+  <main class="stage" id="stage">
+    <section class="device" id="dev-phone">
+      <div class="device-label"><h2><i data-lucide="smartphone"></i>تطبيق الساكن <small>أم أحمد، الوحدة 12</small></h2><span class="here" hidden>هنا</span></div>
+      <div class="frame phone"><div class="screen" id="phone"></div></div>
+    </section>
+    <section class="device" id="dev-gate">
+      <div class="device-label"><h2><i data-lucide="tablet"></i>جهاز البوابة <small>موظف الأمن علي حسن</small></h2><span class="here" hidden>هنا</span></div>
+      <div class="frame tablet"><div class="screen" id="gate"></div></div>
+    </section>
+    <section class="device" id="dev-dash">
+      <div class="device-label"><h2><i data-lucide="monitor"></i>لوحة الإدارة <small>إدارة مجمع النخيل</small></h2><span class="here" hidden>هنا</span></div>
+      <div class="frame laptop"><div class="screen" id="dash"></div></div>
+    </section>
+  </main>
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  // ---------- helpers ----------
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const clock = (m) => `${Math.floor(m / 60) % 24}:${String(m % 60).padStart(2, "0")}`;
+  const latin = (s) => String(s).replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 0x660)).replace(/[۰-۹]/g, (d) => String(d.charCodeAt(0) - 0x6f0));
+  const icon = (n) => `<i data-lucide="${n}"></i>`;
+  const store = { get(k) { try { return localStorage.getItem(k); } catch { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch {} } };
+
+  const COMPOUND = "النخيل";
+  const ME = { name: "أم أحمد", unit: "12", b: "أ" };
+  const OFFICER = "علي حسن";
+  const PARTNERS = [
+    { id: "s", name: "سريع", color: "info" },
+    { id: "w", name: "وصلني", color: "success" },
+    { id: "t", name: "طلبك", color: "warning" },
+  ];
+  const TYPES = { once: "زيارة", recurring: "دوري", worker: "عمّال", delivery: "توصيل" };
+  const EMG = { fire: "حريق", theft: "سرقة", medical: "حالة طبية", other: "أخرى" };
+  const CARS = ["بدون مركبة", "تويوتا كامري بيضاء", "هيونداي إلنترا فضية", "كيا سبورتج رمادية"];
+
+  // ---------- state ----------
+  let S, uid;
+  function fresh() {
+    uid = 100;
+    const t0 = 7 * 60 + 40;
+    return {
+      t: t0,
+      phone: { screen: "home", form: { name: "", car: CARS[0], people: 1 }, err: "", push: null, qty: { gas: 1, water: 1 }, toast: "" },
+      gate: { tab: "passes", search: "", courier: null, alert: null, offline: false, queue: [], lastSync: t0, toast: "" },
+      dash: { page: "overview", draft: { title: "انقطاع الماء غدًا", body: "ينقطع الماء غدًا من 10:00 إلى 13:00 لأعمال صيانة الخزان الرئيسي.", urgent: true }, toast: "", fresh: null },
+      passes: [
+        { id: "p1", name: "سارة محمود", type: "once", unit: "7", b: "أ", car: "كيا سبورتج رمادية", people: 1, status: "active", mine: false, window: "اليوم، من 7:00 إلى 13:00" },
+        { id: "p2", name: "عمّال الصيانة — شركة الرافدين", type: "worker", unit: "21", b: "ب", car: "", people: 3, status: "active", mine: false, window: "من الأحد إلى الخميس 8:00–14:00" },
+        { id: "p3", name: "أم حسين", type: "recurring", unit: "12", b: "أ", car: "", people: 1, status: "inside", mine: true, window: "كل يوم 7:00–15:00 حتى الإلغاء", enteredAt: 7 * 60 + 2 },
+        { id: "p4", name: "محمد كاظم", type: "once", unit: "3", b: "أ", car: "تويوتا كامري بيضاء", people: 2, status: "inside", mine: false, window: "اليوم، من 7:00 إلى 12:00", enteredAt: 7 * 60 + 15 },
+      ],
+      entries: [
+        { id: "e1", time: 6 * 60 + 48, name: "فني الإنترنت", kind: "زيارة", unit: "21", b: "ب", resp: 14, note: "" },
+        { id: "e2", time: 7 * 60 + 2, name: "أم حسين", kind: "دوري", unit: "12", b: "أ", resp: 9, note: "" },
+        { id: "e3", time: 7 * 60 + 15, name: "محمد كاظم", kind: "زيارة", unit: "3", b: "أ", resp: 11, note: "" },
+        { id: "e4", time: 7 * 60 + 21, name: "مندوب وصلني", kind: "توصيل", unit: "7", b: "أ", resp: 6, note: "" },
+      ],
+      couriersInside: [],
+      items: [
+        { id: "gas", name: "قنينة غاز", word: "قنينة", supplier: "وكيل الغاز", phone: "07711234567", lines: [{ b: "أ", u: "3", q: 2 }, { b: "أ", u: "7", q: 1 }, { b: "ب", u: "21", q: 3 }, { b: "ب", u: "30", q: 1 }], batch: null },
+        { id: "water", name: "قنينة ماء 20 لتر", word: "قنينة", supplier: "محطة ماء النخيل", phone: "07801234567", lines: [{ b: "أ", u: "5", q: 4 }, { b: "ب", u: "22", q: 2 }], batch: null },
+      ],
+      mine: {},
+      emergency: null,
+      anns: [{ title: "صيانة المصاعد في المبنى ب", body: "تُجرى صيانة دورية للمصاعد يوم الخميس من 9:00 إلى 12:00.", urgent: false, at: "أمس" }],
+      ping: { phone: false, gate: false, dash: false },
+    };
+  }
+
+  const UI = { mode: store.get("bawaba-demo-mode") === "free" ? "free" : "tour", step: 0, tab: "phone", sound: true, holding: false };
+
+  const tick = (n = 1) => { S.t += n; };
+  const vis = (d) => !narrow() || UI.tab === d;
+  const narrow = () => window.matchMedia("(max-width: 1239px)").matches;
+  const ping = (d) => { if (!vis(d)) S.ping[d] = true; };
+
+  // ---------- events on the model ----------
+  let pushTimer, toastTimers = {};
+  function push(text, go = "home") {
+    S.phone.push = { text, at: S.t, go };
+    ping("phone");
+    clearTimeout(pushTimer);
+    pushTimer = setTimeout(() => { S.phone.push = null; render(); }, UI.mode === "tour" ? 12000 : 6500);
+  }
+  function toast(dev, text) {
+    S[dev].toast = text;
+    clearTimeout(toastTimers[dev]);
+    toastTimers[dev] = setTimeout(() => { S[dev].toast = ""; render(); }, 3200);
+  }
+  const resp = () => 7 + Math.floor(Math.random() * 12);
+
+  function createPass() {
+    const f = S.phone.form;
+    const name = latin(f.name.trim());
+    if (!name) { S.phone.err = "أدخل اسم الزائر."; return false; }
+    tick(1);
+    const id = "p" + uid++;
+    S.passes.unshift({ id, name, type: "once", unit: ME.unit, b: ME.b, car: f.car === CARS[0] ? "" : f.car, people: f.people, status: "active", mine: true, window: `اليوم، من ${clock(S.t)} إلى ${clock(S.t + 240)}`, fresh: true });
+    S.phone.screen = "home"; S.phone.err = ""; S.phone.form = { name: "", car: CARS[0], people: 1 };
+    toast("phone", "أُرسل التصريح إلى البوابة.");
+    ping("gate");
+    return true;
+  }
+  function createDelivery(pid) {
+    tick(1);
+    const p = PARTNERS.find((x) => x.id === pid);
+    S.passes.unshift({ id: "p" + uid++, name: p.name, partner: p.id, type: "delivery", unit: ME.unit, b: ME.b, car: "", people: 1, status: "active", mine: true, window: `صالح حتى ${clock(S.t + 60)}`, fresh: true });
+    S.phone.screen = "home";
+    toast("phone", "تم إنشاء تصريح التوصيل");
+    ping("gate");
+  }
+  function record(entry) {
+    if (S.gate.offline) { S.gate.queue.push(entry); return; }
+    S.entries.unshift(entry); S.dash.fresh = entry.id; ping("dash");
+  }
+  function admit(id) {
+    const p = S.passes.find((x) => x.id === id);
+    if (!p || p.status !== "active") return;
+    tick(1);
+    const r = resp();
+    p.status = "inside"; p.enteredAt = S.t; p.fresh = false;
+    record({ id: "e" + uid++, time: S.t, name: p.name, kind: TYPES[p.type], unit: p.unit, b: p.b, resp: r, note: S.gate.offline ? "سُجّل أثناء انقطاع الاتصال" : "", pass: p.id, mine: p.mine });
+    toast("gate", S.gate.offline ? "سُجّلت دون اتصال، وتُزامَن عند عودة الاتصال." : "تم تسجيل الدخول.");
+    if (p.mine && !S.gate.offline) push(`وصل ${p.name} ودخل الساعة ${clock(S.t)} — أكّد موظف الأمن خلال ${r} ثانية`);
+  }
+  function exitPass(id) {
+    const p = S.passes.find((x) => x.id === id);
+    if (!p) return; tick(1); p.status = "exited"; p.exitedAt = S.t;
+    toast("gate", "سُجِّل الخروج");
+  }
+  function cancelPass(id) {
+    const p = S.passes.find((x) => x.id === id);
+    if (!p || p.status !== "active") return;
+    p.status = "cancelled";
+    S.gate.alert = { kind: "cancel", title: "ملغى", line: `${p.name} — الوحدة ${p.unit}، المبنى ${p.b}`, sentence: "ألغى الساكن هذا التصريح." };
+    ping("gate"); alarm();
+    toast("phone", "أُلغي التصريح.");
+  }
+  function courierAdmit() {
+    const c = S.gate.courier; const p = PARTNERS.find((x) => x.id === c.partner);
+    const pass = S.passes.find((x) => x.type === "delivery" && x.status === "active" && x.unit === c.unit && x.partner === c.partner);
+    tick(1);
+    const r = resp();
+    if (pass) { pass.status = "inside"; pass.enteredAt = S.t; }
+    S.couriersInside.unshift({ name: p.name, unit: c.unit, at: S.t });
+    record({ id: "e" + uid++, time: S.t, name: `مندوب ${p.name}`, kind: "توصيل", unit: c.unit, b: c.unit === ME.unit ? ME.b : "أ", resp: r, note: S.gate.offline ? "سُجّل أثناء انقطاع الاتصال" : "" });
+    S.gate.courier = null; S.gate.tab = "couriers";
+    toast("gate", "دخل مندوب التوصيل.");
+    if (c.unit === ME.unit && !S.gate.offline) push(`وصل مندوب التوصيل ${p.name} الساعة ${clock(S.t)}`);
+  }
+  function courierHold() {
+    const c = S.gate.courier; const p = PARTNERS.find((x) => x.id === c.partner);
+    S.gate.courier = null;
+    toast("gate", "لا يدخل المندوب. أُبلغ أهل الوحدة بالاستلام من البوابة.");
+    if (c.unit === ME.unit) push(`مندوب التوصيل ${p.name} عند البوابة، تفضّل باستلام طلبك`);
+  }
+  function raise(type) {
+    tick(1);
+    S.emergency = { type, status: "raised", at: S.t };
+    S.phone.screen = "home";
+    S.gate.alert = { kind: "emg", title: "طوارئ", line: `${EMG[type]} — الوحدة ${ME.unit}، المبنى ${ME.b}`, sentence: "بلاغ طوارئ من هذه الوحدة." };
+    ping("gate"); ping("dash"); alarm();
+  }
+  function acknowledge() {
+    const a = S.gate.alert; if (!a) return;
+    S.gate.alert = null; stopAlarm();
+    if (a.kind === "emg" && S.emergency && S.emergency.status === "raised") {
+      tick(1); S.emergency.status = "ack"; S.emergency.ackAt = S.t;
+      push("تسلّم الأمن بلاغ الطوارئ."); ping("dash");
+    }
+  }
+  function placeOrder(itemId, qty) {
+    tick(1);
+    S.mine[itemId] = { q: qty, status: "pending", at: S.t };
+    S.phone.screen = "orders";
+    toast("phone", "أُرسل طلبك.");
+    ping("dash");
+  }
+  function cancelOrder(itemId) { if (S.mine[itemId]) S.mine[itemId].status = "cancelled"; toast("phone", "أُلغي طلبك."); }
+  function pendingLines(item) {
+    const lines = item.batch ? [] : item.lines.slice();
+    const m = S.mine[item.id];
+    if (m && m.status === "pending") lines.push({ b: ME.b, u: ME.unit, q: m.q });
+    return lines.sort((x, y) => x.b.localeCompare(y.b, "ar") || Number(x.u) - Number(y.u));
+  }
+  function sendBatch(itemId) {
+    const item = S.items.find((x) => x.id === itemId);
+    const lines = pendingLines(item); if (!lines.length) return;
+    tick(2);
+    const total = lines.reduce((n, l) => n + l.q, 0);
+    const text = [`طلب ${item.name} — ${COMPOUND}`, ...lines.map((l) => `المبنى ${l.b}، الوحدة ${l.u}: ${l.q}`), `المجموع: ${total} ${item.word}`].join("\n");
+    item.batch = { lines, total, text, at: S.t, delivered: false };
+    item.lines = [];
+    const m = S.mine[item.id]; if (m && m.status === "pending") m.status = "sent";
+  }
+  function delivered(itemId) {
+    const item = S.items.find((x) => x.id === itemId);
+    if (!item.batch || item.batch.delivered) return;
+    tick(30); item.batch.delivered = true; item.batch.dAt = S.t;
+    const m = S.mine[item.id];
+    if (m && m.status === "sent") { m.status = "delivered"; push(`وصل طلبك: ${item.name}`, "orders"); }
+  }
+  function publish() {
+    const d = S.dash.draft; if (!d.title.trim()) { toast("dash", "أدخل عنوان الإعلان."); return; }
+    tick(1);
+    S.anns.unshift({ title: latin(d.title.trim()), body: latin(d.body.trim()), urgent: d.urgent, at: clock(S.t), fresh: true });
+    push(`${d.urgent ? "إعلان عاجل" : "إعلان"}: ${latin(d.title.trim())}`, "ann");
+    toast("dash", "نُشر الإعلان.");
+    S.dash.draft = { title: "", body: "", urgent: false };
+    if (d.urgent && UI.sound) beep(2);
+  }
+  function setOffline(off) {
+    if (off) { S.gate.offline = true; S.gate.lastSync = S.t; return; }
+    S.gate.offline = false;
+    const q = S.gate.queue.splice(0);
+    q.forEach((e) => {
+      S.entries.unshift(e); S.dash.fresh = e.id;
+      if (e.mine) push(`وصل ${e.name} ودخل الساعة ${clock(e.time)} — سُجّل الدخول أثناء انقطاع الاتصال بالبوابة`);
+    });
+    if (q.length) { ping("dash"); toast("gate", `تمت المزامنة. العمليات: ${q.length}، منها بملاحظة: 0`); }
+  }
+
+  // ---------- sound ----------
+  let actx, alarmTimer;
+  function beep(times = 1) {
+    if (!UI.sound) return;
+    try {
+      actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+      for (let i = 0; i < times; i++) {
+        const o = actx.createOscillator(), g = actx.createGain();
+        o.type = "square"; o.frequency.value = i % 2 ? 660 : 880;
+        const t = actx.currentTime + i * 0.28;
+        g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.12, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.24);
+        o.connect(g).connect(actx.destination); o.start(t); o.stop(t + 0.26);
+      }
+    } catch {}
+  }
+  function alarm() { stopAlarm(); beep(3); alarmTimer = setInterval(() => { if (S.gate.alert) beep(3); else stopAlarm(); }, 1400); }
+  function stopAlarm() { clearInterval(alarmTimer); }
+
+  // ---------- tour ----------
+  const T = (sel) => sel;
+  const myVisitor = () => S.passes.find((p) => p.mine && p.type === "once" && p.tour);
+  const STEPS = [
+    { ch: 0, dev: "phone", text: "يبدأ كل شيء من هاتف الساكن. الإجراء الأول في الشاشة الرئيسية: اضغط «تسجيل زائر».",
+      target: () => "r-visitor", done: () => S.phone.screen === "visitor" || !!myVisitor(), auto: () => openVisitor() },
+    { ch: 0, dev: "phone", text: "اسم الزائر هو الحقل الوحيد المطلوب، والمركبة وعدد الأشخاص اختياريان. كتبنا «أحمد علي». اضغط «إرسال التصريح».",
+      target: () => "r-send", done: () => !!myVisitor(), auto: () => { if (S.phone.screen !== "visitor") openVisitor(); tourCreate(); } },
+    { ch: 0, dev: "gate", text: "وصل التصريح إلى جهاز البوابة في اللحظة نفسها. يصل الزائر، فيضغط موظف الأمن «دخول» أمام اسمه.",
+      target: () => myVisitor() ? "g-admit-" + myVisitor().id : "", done: () => myVisitor() && myVisitor().status !== "active", auto: () => { S.gate.tab = "passes"; admit(myVisitor().id); } },
+    { ch: 0, dev: "phone", text: "وصل الساكنَ إشعارٌ بوقت الدخول، وتغيّرت حالة التصريح في قائمته إلى «دخل الساعة».",
+      target: () => "r-passes", done: () => false, auto: () => {} },
+    { ch: 0, dev: "dash", text: "وسُجّل الدخول في لوحة الإدارة: الوقت والوحدة والموظف وزمن الاستجابة. افتح «سجل الدخول».",
+      target: () => "d-nav-entries", done: () => S.dash.page === "entries", auto: () => { S.dash.page = "entries"; } },
+    { ch: 1, dev: "phone", text: "التوصيل بلا حقول مطلوبة إطلاقًا. اضغط «تسجيل توصيل» ثم اختر الشركة بلمسة واحدة.",
+      target: () => S.phone.screen === "delivery" ? "r-partner-s" : "r-delivery", done: () => S.passes.some((p) => p.type === "delivery" && p.mine), auto: () => createDelivery("s") },
+    { ch: 1, dev: "gate", text: "وصل المندوب إلى البوابة. اضغط «تسجيل توصيل»، واختر «سريع»، واكتب رقم الوحدة 12 من لوحة الأرقام، ثم «دخول». يطابق الجهاز التصريح تلقائيًا.",
+      target: () => { const c = S.gate.courier; if (!c) return "g-courier"; if (!c.partner) return "g-partner-s"; if (c.unit !== "12") return "g-keypad"; return "g-courier-admit"; },
+      done: () => S.couriersInside.some((c) => c.unit === "12"), auto: () => { S.gate.courier = { partner: "s", unit: "12" }; courierAdmit(); } },
+    { ch: 1, dev: "phone", text: "دخل المندوب ووصل الساكنَ إشعار. ويُغلق تصريح التوصيل تلقائيًا بعد 60 دقيقة من الدخول، ولكل وحدة حدّ للتصاريح المفتوحة.",
+      target: () => "r-passes", done: () => false, auto: () => {} },
+    { ch: 2, dev: "phone", text: "زر الطوارئ يعمل بالضغط المطوّل ثلاث ثوانٍ حتى لا يُضغط بالخطأ. اضغط مطوّلًا على «طوارئ» ثم اختر نوع الحالة.",
+      target: () => S.phone.screen === "sosType" ? "r-emg-fire" : "r-sos", done: () => !!S.emergency, auto: () => raise("fire") },
+    { ch: 2, dev: "gate", text: "تظهر الطوارئ على جهاز البوابة بملء الشاشة مع صوت، ولا تختفي حتى يضغط الموظف «تأكيد الاستلام».",
+      target: () => "g-ack", done: () => S.emergency && S.emergency.status === "ack", auto: () => acknowledge() },
+    { ch: 2, dev: "dash", text: "وتتابع الإدارة البلاغ من لوحتها. وإن لم يُستلم البلاغ خلال دقيقة يُبلَّغ المشرف والإدارة تلقائيًا.",
+      target: () => "d-emg", done: () => false, auto: () => {} },
+    { ch: 3, dev: "phone", text: "طلب جماعي: يطلب الساكن الغاز من التطبيق. افتح «الطلبات»، واجعل الكمية 2، ثم «إرسال الطلب».",
+      target: () => S.phone.screen !== "orders" ? "r-orders" : (S.phone.qty.gas < 2 ? "r-plus-gas" : "r-place-gas"), done: () => S.mine.gas && S.mine.gas.status === "pending", auto: () => { S.phone.qty.gas = 2; placeOrder("gas", 2); } },
+    { ch: 3, dev: "dash", text: "تجمع الإدارة طلبات كل الوحدات في قائمة واحدة. افتح «الطلبات الجماعية» واضغط «إرسال إلى المورّد».",
+      target: () => S.dash.page !== "orders" ? "d-nav-orders" : "d-send-gas", done: () => !!S.items[0].batch, auto: () => { S.dash.page = "orders"; sendBatch("gas"); } },
+    { ch: 3, dev: "dash", text: "هذه الرسالة التي تصل المورّد على واتساب: الوحدات والكميات فقط، دون أسماء السكان أو أرقام هواتفهم. عند وصول الطلب اضغط «تم التسليم».",
+      target: () => "d-delivered-gas", done: () => S.items[0].batch && S.items[0].batch.delivered, auto: () => delivered("gas") },
+    { ch: 4, dev: "dash", text: "إعلان لكل السكان: افتح «الإعلانات». كتبنا إعلانًا عاجلًا، والعاجل يصل بإشعار مع صوت. اضغط «نشر الإعلان».",
+      target: () => S.dash.page !== "ann" ? "d-nav-ann" : "d-publish", done: () => S.anns.some((a) => a.fresh), auto: () => { S.dash.page = "ann"; if (!S.dash.draft.title) S.dash.draft = fresh().dash.draft; publish(); } },
+    { ch: 4, dev: "phone", text: "وصل الإعلان إلى هاتف الساكن. اضغط الإشعار لفتح «الإعلانات»، وفيها كل ما نشرته الإدارة.",
+      target: () => S.phone.push ? "r-push" : S.phone.screen === "ann" ? "" : S.phone.screen === "home" ? "r-ann" : "r-back", done: () => false, auto: () => {} },
+  ];
+  const CHAPTERS = ["زائر", "توصيل", "طوارئ", "طلب جماعي", "إعلان"];
+  const DEVNAME = { phone: "هاتف الساكن", gate: "جهاز البوابة", dash: "لوحة الإدارة" };
+
+  function openVisitor() {
+    S.phone.screen = "visitor"; S.phone.err = "";
+    if (UI.mode === "tour") S.phone.form = { name: "أحمد علي", car: CARS[1], people: 2 };
+  }
+  function tourCreate() { if (createPass()) S.passes[0].tour = true; }
+
+  function afterAction() {
+    if (UI.mode === "tour" && UI.step < STEPS.length) {
+      while (UI.step < STEPS.length && STEPS[UI.step].done()) UI.step++;
+      focusStep();
+    }
+    render();
+  }
+  function focusStep() {
+    const st = STEPS[UI.step];
+    if (st && narrow()) { UI.tab = st.dev; S.ping[st.dev] = false; }
+  }
+  function next() {
+    const st = STEPS[UI.step];
+    if (!st) return;
+    if (!st.done()) st.auto();
+    UI.step++;
+    focusStep();
+    render();
+  }
+
+  // ---------- render: phone ----------
+  function statusbar(brand) {
+    return `<div class="statusbar${brand ? " on-brand" : ""}"><span class="num">${clock(S.t)}</span><span>${icon("signal")}${icon("wifi")}${icon("battery-full")}</span></div>`;
+  }
+  function passBadge(p) {
+    if (p.status === "inside") return `<span class="badge b-ok">دخل الساعة ${clock(p.enteredAt)}</span>`;
+    if (p.status === "exited") return `<span class="badge b-mute">خرج</span>`;
+    if (p.status === "cancelled") return `<span class="badge b-mute">ملغى</span>`;
+    return `<span class="badge b-warn">فعّال</span>`;
+  }
+  function phoneHome() {
+    const mine = S.passes.filter((p) => p.mine);
+    const e = S.emergency;
+    return `${statusbar(true)}<div class="scroll">
+      <div class="r-head"><span class="cname">${COMPOUND}</span><h3>مرحبًا، ${ME.name}</h3><p>الوحدة ${ME.unit}، المبنى ${ME.b}</p></div>
+      <div class="r-body">
+        <div class="card visit-card"><h4>هل لديك زائر؟</h4><p>سجّله ليصل التصريح إلى البوابة فورًا.</p>
+          <button class="pbtn" data-act="r-visitor" data-tour="r-visitor">${icon("user-plus")}تسجيل زائر</button></div>
+        <button class="pbtn out" data-act="r-delivery" data-tour="r-delivery">${icon("package")}تسجيل توصيل</button>
+        ${e ? `<div class="status-card ${e.status === "ack" ? "sc-ok" : "sc-danger"}">${icon(e.status === "ack" ? "shield-check" : "siren")}<span>${e.status === "ack" ? "تسلّم الأمن البلاغ." : "أُرسل البلاغ إلى الأمن."} ${EMG[e.type]}، الساعة ${clock(e.at)}</span></div>` : ""}
+        <h4 class="sec-title">التصاريح</h4>
+        <div class="rows" data-tour="r-passes">${mine.length ? mine.map((p) => `
+          <div class="row"><div class="grow"><b>${esc(p.name)}</b><small>${TYPES[p.type]} · ${esc(p.window)}</small></div>${passBadge(p)}
+          ${p.status === "active" ? `<button class="opt" data-act="r-cancel" data-id="${p.id}" aria-label="إلغاء التصريح">إلغاء</button>` : ""}</div>`).join("") : `<div class="row"><small>لا توجد تصاريح بعد.</small></div>`}</div>
+        <div class="tiles">
+          <button class="tile t-info" data-act="r-ann" data-tour="r-ann">${icon("megaphone")}الإعلانات</button>
+          <button class="tile t-warn" data-act="r-orders" data-tour="r-orders">${icon("shopping-basket")}الطلبات</button>
+        </div>
+        <button class="sos" data-hold="sos" data-tour="r-sos"><span class="fill"></span>${icon("siren")}<span>طوارئ</span></button>
+        <p class="hint">اضغط مطولًا ثلاث ثوانٍ لإرسال بلاغ طوارئ</p>
+      </div></div>`;
+  }
+  function subHead(title) {
+    return `${statusbar(false)}<div class="sub-head"><button class="back" data-act="r-home" data-tour="r-back" aria-label="رجوع">${icon("arrow-left")}</button><h3>${title}</h3></div>`;
+  }
+  function phoneVisitor() {
+    const f = S.phone.form;
+    return `${subHead("تسجيل زائر")}<div class="scroll"><div class="r-body">
+      <div class="card">
+        <div class="field"><label for="v-name">اسم الزائر</label><input class="input" id="v-name" data-in="v-name" value="${esc(f.name)}" placeholder="مثل: أحمد علي" autocomplete="off"></div>
+        ${S.phone.err ? `<p class="err">${S.phone.err}</p>` : ""}
+      </div>
+      <div class="card"><div class="field"><label>المركبة (اختياري)</label><div class="opts">${CARS.map((c) => `<button class="opt" data-act="r-car" data-v="${esc(c)}" aria-pressed="${f.car === c}">${c}</button>`).join("")}</div></div></div>
+      <div class="card"><div class="field"><label>عدد الأشخاص (اختياري)</label><div class="stepper">
+        <button data-act="r-people" data-v="-1" aria-label="إنقاص">−</button><output class="num">${f.people}</output><button data-act="r-people" data-v="1" aria-label="زيادة">+</button></div></div></div>
+      <button class="pbtn" data-act="r-send" data-tour="r-send">${icon("send")}إرسال التصريح</button>
+    </div></div>`;
+  }
+  function phoneDelivery() {
+    return `${subHead("تسجيل توصيل")}<div class="scroll"><div class="r-body">
+      <p class="hint" style="text-align:start;margin:0">اختر شركة التوصيل لإنشاء التصريح.</p>
+      <div class="partners">${PARTNERS.map((p) => `<button class="partner" data-act="r-partner" data-id="${p.id}" data-tour="r-partner-${p.id}"><span class="pcircle pc-${p.color}">${p.name[0]}</span>${p.name}</button>`).join("")}</div>
+      <p class="hint" style="text-align:start;margin:0">رقم هاتف المندوب والملاحظة اختياريان. التصريح صالح 60 دقيقة.</p>
+    </div></div>`;
+  }
+  function phoneOrders() {
+    const st = { pending: ["بانتظار الإرسال", "b-info"], sent: ["أُرسل إلى المورّد", "b-warn"], delivered: ["تم التسليم", "b-ok"], cancelled: ["أُلغي", "b-mute"] };
+    const mine = Object.entries(S.mine);
+    return `${subHead("الطلبات")}<div class="scroll"><div class="r-body">
+      <p class="hint" style="text-align:start;margin:0">اطلب الغاز والماء وغيرها، وتُرسلها الإدارة إلى المورّد مع طلبات الجيران.</p>
+      ${S.items.map((it) => { const m = S.mine[it.id]; const pend = m && m.status === "pending"; return `
+        <div class="card"><b>${it.name}</b>${pend ? `<small style="color:var(--muted)">طلبك الحالي: ${m.q} ${it.word}</small>` : ""}
+          <div class="stepper"><button data-act="r-qty" data-id="${it.id}" data-v="-1" aria-label="إنقاص الكمية">−</button><output class="num">${S.phone.qty[it.id]}</output><button data-act="r-qty" data-id="${it.id}" data-v="1" aria-label="زيادة الكمية" data-tour="r-plus-${it.id}">+</button></div>
+          <button class="pbtn" data-act="r-place" data-id="${it.id}" data-tour="r-place-${it.id}">${pend ? "تحديث الطلب" : "إرسال الطلب"}</button>
+          ${pend ? `<button class="pbtn out" data-act="r-ocancel" data-id="${it.id}">إلغاء الطلب</button>` : ""}</div>`; }).join("")}
+      <h4 class="sec-title">طلباتي</h4>
+      <div class="rows">${mine.length ? mine.map(([id, m]) => { const it = S.items.find((x) => x.id === id); return `<div class="row"><div class="grow"><b>${it.name}</b><small class="num">${m.q} ${it.word} · ${clock(m.at)}</small></div><span class="badge ${st[m.status][1]}">${st[m.status][0]}</span></div>`; }).join("") : `<div class="row"><small>لا توجد طلبات خلال آخر 30 يومًا.</small></div>`}</div>
+    </div></div>`;
+  }
+  function phoneAnn() {
+    return `${subHead("الإعلانات")}<div class="scroll"><div class="r-body"><div class="rows">
+      ${S.anns.map((a) => `<div class="ann"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><b>${esc(a.title)}</b>${a.urgent ? `<span class="badge b-warn">عاجل</span>` : ""}</div><p>${esc(a.body)}</p><small style="color:var(--muted)">${esc(a.at)}</small></div>`).join("")}
+    </div></div></div>`;
+  }
+  function phone() {
+    const s = S.phone.screen;
+    let html = s === "visitor" ? phoneVisitor() : s === "delivery" ? phoneDelivery() : s === "orders" ? phoneOrders() : s === "ann" ? phoneAnn() : phoneHome();
+    if (s === "sosType") html = phoneHome() + `<div class="sheet"><div class="panel"><h4>ما نوع الحالة؟</h4><div class="types">${Object.entries(EMG).map(([k, v]) => `<button data-act="r-emg" data-v="${k}" data-tour="r-emg-${k}">${v}</button>`).join("")}</div><button class="pbtn out" data-act="r-home">إلغاء</button></div></div>`;
+    if (S.phone.push) html += `<button class="push" data-act="r-push" data-tour="r-push"><span class="appicon">${icon("bell")}</span><span><b>${COMPOUND} · الآن</b><span>${esc(S.phone.push.text)}</span></span></button>`;
+    if (S.phone.toast) html += `<div class="toast">${esc(S.phone.toast)}</div>`;
+    return html;
+  }
+
+  // ---------- render: gate ----------
+  function gateMatches(p) {
+    const q = latin(S.gate.search.trim()); if (!q) return true;
+    return p.name.includes(q) || p.unit === q.replace(/\D/g, "") || (p.car || "").includes(q);
+  }
+  function gate() {
+    const g = S.gate;
+    const active = S.passes.filter((p) => p.status === "active");
+    const inside = S.passes.filter((p) => p.status === "inside" && p.type !== "delivery");
+    let body;
+    if (g.courier) {
+      const c = g.courier;
+      const matched = c.partner && c.unit && S.passes.some((x) => x.type === "delivery" && x.status === "active" && x.unit === c.unit && x.partner === c.partner);
+      body = `<div class="g-body">
+        <div style="display:flex;justify-content:space-between;align-items:center"><h3 style="font-size:20px">تسجيل توصيل</h3><button class="gbtn out" data-act="g-courier-close">العودة إلى القائمة</button></div>
+        <b>اختر شريك التوصيل</b>
+        <div class="partners">${PARTNERS.map((p) => `<button class="partner" data-act="g-partner" data-id="${p.id}" data-tour="g-partner-${p.id}" style="${c.partner === p.id ? "border:3px solid var(--ink)" : ""}"><span class="pcircle pc-${p.color}">${p.name[0]}</span>${p.name}</button>`).join("")}</div>
+        <b>رقم الوحدة</b>
+        <div class="unit-display num" aria-live="polite">${c.unit || "—"}</div>
+        <div class="keypad" data-tour="g-keypad">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => `<button data-act="g-key" data-v="${n}">${n}</button>`).join("")}<button data-act="g-key" data-v="del" aria-label="حذف رقم">${icon("delete")}</button><button data-act="g-key" data-v="0">0</button><button data-act="g-key" data-v="clr">مسح</button></div>
+        ${c.partner && c.unit ? (matched ? `<div class="match yes">${icon("check-circle-2")}يوجد تصريح توصيل لهذه الوحدة</div>` : `<div class="match no">${icon("info")}لا يوجد تصريح توصيل لهذه الوحدة</div>`) : ""}
+        ${matched ? `<button class="gbtn ok" style="width:100%" data-act="g-courier-admit" data-tour="g-courier-admit">${icon("log-in")}دخول</button>` : c.partner && c.unit ? `<button class="gbtn dark" data-act="g-courier-hold">إبلاغ أهل الوحدة بالاستلام من البوابة</button>` : ""}
+      </div>`;
+    } else {
+      const list = g.tab === "passes" ? active.filter(gateMatches) : [];
+      body = `<div class="g-body">
+        <label class="g-search">${icon("search")}<input id="g-search" data-in="g-search" value="${esc(g.search)}" placeholder="ابحث بالاسم أو رقم الوحدة أو المركبة" autocomplete="off"></label>
+        <button class="gbtn info" data-act="g-courier" data-tour="g-courier">${icon("package")}تسجيل توصيل</button>
+        <div class="g-tabs" role="tablist">
+          <button role="tab" data-act="g-tab" data-v="passes" aria-selected="${g.tab === "passes"}">التصاريح <span class="num">${active.length}</span></button>
+          <button role="tab" data-act="g-tab" data-v="inside" aria-selected="${g.tab === "inside"}">بالداخل الآن <span class="num">${inside.length}</span></button>
+          <button role="tab" data-act="g-tab" data-v="couriers" aria-selected="${g.tab === "couriers"}">المندوبون <span class="num">${S.couriersInside.length}</span></button>
+        </div>
+        ${g.tab === "passes" ? (list.length ? list.map((p) => `
+          <div class="g-card"${p.fresh ? ' style="outline:2px solid var(--success)"' : ""}><div class="grow"><b>${esc(p.name)}</b>
+            <span class="unitbig">الوحدة ${p.unit}، المبنى ${p.b} · <span class="badge ${p.type === "delivery" ? "b-info" : "b-brand"}">${TYPES[p.type]}</span></span>
+            <small>${esc(p.window)}${p.car ? " · " + esc(p.car) : ""}${p.people > 1 ? ` · ${p.people} أشخاص` : ""}</small></div>
+            ${p.type === "delivery" ? `<span class="badge b-info">بانتظار المندوب</span>` : `<button class="gbtn ok" data-act="g-admit" data-id="${p.id}" data-tour="g-admit-${p.id}">${icon("log-in")}دخول</button>`}</div>`).join("") : `<div class="g-empty">${g.search ? "لا يوجد تصريح يطابق البحث." : "لا توجد تصاريح فعّالة الآن."}</div>`) : ""}
+        ${g.tab === "inside" ? (inside.length ? inside.map((p) => `
+          <div class="g-card"><div class="grow"><b>${esc(p.name)}</b><span class="unitbig">الوحدة ${p.unit}، المبنى ${p.b}</span><small>دخل ${clock(p.enteredAt)}</small></div>
+          <button class="gbtn out" data-act="g-exit" data-id="${p.id}">${icon("log-out")}تسجيل الخروج</button></div>`).join("") : `<div class="g-empty">لا أحد في الداخل الآن.</div>`) : ""}
+        ${g.tab === "couriers" ? (S.couriersInside.length ? S.couriersInside.map((c) => `
+          <div class="g-card"><div class="grow"><b>مندوب ${esc(c.name)}</b><span class="unitbig">الوحدة ${c.unit}</span><small>وصل ${clock(c.at)} · يُغلق تلقائيًا ${clock(c.at + 60)}</small></div><span class="badge b-info">بالداخل</span></div>`).join("") : `<div class="g-empty">لا يوجد مندوبون في الداخل.</div>`) : ""}
+      </div>`;
+    }
+    let html = `<div class="g-head"><div><h3>البوابة الرئيسية</h3><small>مجمع ${COMPOUND} · ${OFFICER} · <span class="num">${clock(S.t)}</span></small></div>
+      <button class="net ${g.offline ? "off" : "on"}" data-act="g-net" title="محاكاة انقطاع الاتصال وعودته">${icon(g.offline ? "wifi-off" : "wifi")}${g.offline ? "غير متصل" : "متصل"}</button></div>
+      ${g.offline ? `<div class="g-banner">غير متصل — آخر تحديث ${clock(g.lastSync)} — بانتظار المزامنة: ${g.queue.length}</div>` : ""}
+      <div class="scroll">${body}</div>`;
+    if (g.alert) html += `<div class="alert" role="alertdialog" aria-label="${g.alert.title}">${icon(g.alert.kind === "emg" ? "siren" : "ban")}<h3>${g.alert.title}</h3><p>${esc(g.alert.line)}</p><p style="font-weight:500">${g.alert.sentence}</p><button data-act="g-ack" data-tour="g-ack">تأكيد الاستلام</button></div>`;
+    if (g.toast) html += `<div class="toast">${esc(g.toast)}</div>`;
+    return html;
+  }
+
+  // ---------- render: dashboard ----------
+  function dash() {
+    const d = S.dash;
+    const nav = [["overview", "layout-dashboard", "نظرة عامة"], ["entries", "list", "سجل الدخول"], ["orders", "shopping-basket", "الطلبات الجماعية"], ["ann", "megaphone", "الإعلانات"]];
+    const e = S.emergency;
+    const emg = e && e.status !== "closed" ? `<div class="emg ${e.status}" data-tour="d-emg"><span>${e.status === "raised" ? `بلاغ طوارئ: ${EMG[e.type]} — الوحدة ${ME.unit}` : `بلاغ طوارئ قيد المعالجة: ${EMG[e.type]} — الوحدة ${ME.unit}`} · منذ ${clock(e.at)}</span>
+      <span style="display:flex;gap:8px;align-items:center"><span class="badge ${e.status === "raised" ? "b-danger" : "b-ok"}">${e.status === "raised" ? "لم يُستلم بعد" : "تم الاستلام"}</span>${e.status === "ack" ? `<button data-act="d-emg-close">إغلاق</button>` : ""}</span></div>` : "";
+    const insideNow = S.passes.filter((p) => p.status === "inside" && p.type !== "delivery").length;
+    const pending = S.items.reduce((n, it) => n + pendingLines(it).reduce((a, l) => a + l.q, 0), 0);
+    let main = "";
+    const table = (rows) => `<div class="table-card"><table><thead><tr><th>وقت الدخول</th><th>الاسم</th><th>النوع</th><th>الوحدة</th><th>المبنى</th><th>موظف الأمن</th><th>زمن الاستجابة</th><th>ملاحظات</th></tr></thead><tbody>
+      ${rows.map((r) => `<tr class="${r.id === d.fresh ? "new" : ""}"><td class="num">${clock(r.time)}</td><td>${esc(r.name)}</td><td>${r.kind}</td><td class="num">${r.unit}</td><td>${r.b}</td><td>${OFFICER}</td><td class="num">${r.resp} ثانية</td><td>${r.note}</td></tr>`).join("")}</tbody></table></div>`;
+    if (d.page === "overview") {
+      main = `<h3>نظرة عامة</h3><p class="d-desc">مجمع ${COMPOUND} · اليوم حتى <span class="num">${clock(S.t)}</span></p>
+        <div class="kpis"><div class="kpi"><b class="num">${insideNow}</b><small>بالداخل الآن</small></div><div class="kpi"><b class="num">${S.entries.length}</b><small>دخول اليوم</small></div><div class="kpi"><b class="num">${S.couriersInside.length}</b><small>مندوبون بالداخل</small></div><div class="kpi"><b class="num">${pending}</b><small>قنانٍ بانتظار الإرسال</small></div></div>
+        <h4 class="sec-title">آخر الدخول</h4><div class="table-card"><table><thead><tr><th>الوقت</th><th>الاسم</th><th>النوع</th><th>الوحدة</th></tr></thead><tbody>${S.entries.slice(0, 5).map((r) => `<tr class="${r.id === d.fresh ? "new" : ""}"><td class="num">${clock(r.time)}</td><td>${esc(r.name)}</td><td>${r.kind}</td><td class="num">${r.unit}، ${r.b}</td></tr>`).join("")}</tbody></table></div>`;
+    } else if (d.page === "entries") {
+      main = `<div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center"><h3>سجل الدخول</h3><button class="dbtn out" data-act="d-export">${icon("file-spreadsheet")}تصدير Excel</button></div>
+        <p class="d-desc">اليوم · كل البوابات · ${S.entries.length} سجل</p>${table(S.entries)}`;
+    } else if (d.page === "orders") {
+      main = `<h3>الطلبات الجماعية</h3><p class="d-desc">طلبات السكان لكل مادة، تُرسل إلى المورّد برسالة واحدة.</p>
+        ${S.items.map((it) => { const lines = pendingLines(it); const total = lines.reduce((n, l) => n + l.q, 0); return `<div class="item-card">
+          <header><div><h4>${it.name}</h4><small>المورّد: ${it.supplier} · <span class="num" dir="ltr">${it.phone}</span></small></div>
+          ${it.batch ? "" : `<span class="badge ${total ? "b-info" : "b-mute"}">${total ? `بانتظار الإرسال: ${total} ${it.word}` : "لا توجد طلبات بانتظار الإرسال."}</span>`}</header>
+          ${!it.batch && lines.length ? `<div class="table-card" style="box-shadow:none;border:1px solid var(--line)"><table><thead><tr><th>المبنى</th><th>الوحدة</th><th>الكمية</th></tr></thead><tbody>${lines.map((l) => `<tr class="${l.u === ME.unit && l.b === ME.b ? "new" : ""}"><td>${l.b}</td><td class="num">${l.u}</td><td class="num">${l.q}</td></tr>`).join("")}</tbody></table></div>
+            <div><button class="dbtn" data-act="d-send" data-id="${it.id}" data-tour="d-send-${it.id}">${icon("send")}إرسال إلى المورّد</button></div>` : ""}
+          ${it.batch ? `<div class="wa-head">${icon("message-circle")}رسالة واتساب إلى ${it.supplier}</div><div class="wa num">${esc(it.batch.text)}</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><small>أُرسلت في ${clock(it.batch.at)}${it.batch.delivered ? ` · سُلّمت في ${clock(it.batch.dAt)}` : ""}</small>
+            ${it.batch.delivered ? `<span class="badge b-ok">تم التسليم</span>` : `<button class="dbtn ok" data-act="d-delivered" data-id="${it.id}" data-tour="d-delivered-${it.id}">${icon("check")}تم التسليم</button>`}</div>` : ""}
+        </div>`; }).join("")}`;
+    } else if (d.page === "ann") {
+      main = `<h3>الإعلانات</h3><p class="d-desc">يصل الإعلان إلى كل السكان. العاجل بإشعار مع صوت، والعادي بإشعار صامت.</p>
+        <div class="item-card"><div class="field"><label for="a-title">العنوان</label><input class="input" id="a-title" data-in="a-title" value="${esc(d.draft.title)}"></div>
+          <div class="field"><label for="a-body">النص</label><textarea class="input" id="a-body" data-in="a-body">${esc(d.draft.body)}</textarea></div>
+          <label class="check"><input type="checkbox" id="a-urgent" data-in="a-urgent" ${d.draft.urgent ? "checked" : ""}>إعلان عاجل</label>
+          <div><button class="dbtn" data-act="d-publish" data-tour="d-publish">${icon("megaphone")}نشر الإعلان</button></div></div>
+        <div class="rows">${S.anns.map((a) => `<div class="ann"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><b>${esc(a.title)}</b>${a.urgent ? `<span class="badge b-warn">عاجل</span>` : ""}<small style="color:var(--muted)">${esc(a.at)}</small></div><p>${esc(a.body)}</p></div>`).join("")}</div>`;
+    }
+    let html = `<div class="d-top"><span class="brandline"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M8 34V8h24v26" fill="none" stroke="#C2502F" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/></svg>بوابة</span><small>إدارة مجمع ${COMPOUND}</small></div>
+      <div class="d-shell"><nav class="d-nav" aria-label="أقسام اللوحة">${nav.map(([k, ic, l]) => `<button data-act="d-nav" data-v="${k}" data-tour="d-nav-${k}" ${d.page === k ? 'aria-current="page"' : ""}>${icon(ic)}${l}</button>`).join("")}</nav>
+      <div class="d-main">${emg}${main}</div></div>`;
+    if (d.toast) html += `<div class="toast">${esc(d.toast)}</div>`;
+    return html;
+  }
+
+  // ---------- render: guide, tabs ----------
+  function guide() {
+    const el = document.getElementById("guide");
+    if (UI.mode === "free") {
+      el.innerHTML = `<div class="step-row"><div class="step-text"><div class="step-meta"><span class="where">${icon("hand")}تجربة حرة</span></div>
+        <p>كل الشاشات متصلة: سجّل زائرًا أو توصيلًا من هاتف الساكن، وأدخله من البوابة، وتابع كل شيء في لوحة الإدارة. جرّب أيضًا زر «متصل» في جهاز البوابة لمحاكاة انقطاع الاتصال ثم عودته، أو «إلغاء» تصريح فعّال من هاتف الساكن.</p></div>
+        <div class="step-btns"><button class="btn out" data-act="mode" data-v="tour">${icon("route")}ابدأ الجولة الموجّهة</button></div></div>`;
+      return;
+    }
+    if (UI.step >= STEPS.length) {
+      el.innerHTML = `<div class="finish"><h2 style="font-size:20px">انتهت الجولة</h2>
+        <p style="margin:0">رأيت خمس حالات يومية تمر عبر الأجهزة الثلاثة. وهذا ما يعمل في المنتج اليوم أيضًا:</p>
+        <ul><li>تفعيل حساب الساكن برمز لمرة واحدة ثم رمز سري من 6 أرقام</li><li>عزل كامل لبيانات كل مجمع عن غيره في قاعدة البيانات</li><li>عمل البوابة دون اتصال ومزامنتها عند عودته</li><li>زائر غير مسجّل: يُسأل أهل الوحدة من التطبيق أو بالاتصال</li><li>تصاريح دورية وللعمّال وللمناسبات</li><li>طلبات الصيانة مع الصور والتقييم</li><li>دليل الخدمات وسياسة التوصيل لكل وحدة</li><li>استيراد الوحدات والسكان من Excel وقائمة زوار اليوم المطبوعة</li></ul>
+        <div class="step-btns"><button class="btn" data-act="mode" data-v="free">${icon("hand")}تجربة حرة</button><button class="btn out" data-act="reset">${icon("rotate-ccw")}إعادة الجولة</button></div></div>`;
+      return;
+    }
+    const st = STEPS[UI.step];
+    el.innerHTML = `<div class="chapters">${CHAPTERS.map((c, i) => `<span class="chip ${i < st.ch ? "done" : i === st.ch ? "now" : ""}">${i < st.ch ? icon("check") : ""}${i + 1}. ${c}</span>`).join("")}</div>
+      <div class="progress" aria-hidden="true"><i style="width:${(UI.step / STEPS.length) * 100}%"></i></div>
+      <div class="step-row"><div class="step-text"><div class="step-meta"><span class="num">الخطوة ${UI.step + 1} من ${STEPS.length}</span><span class="where">${icon(st.dev === "phone" ? "smartphone" : st.dev === "gate" ? "tablet" : "monitor")}${DEVNAME[st.dev]}</span></div>
+        <p>${st.text}</p></div>
+        <div class="step-btns"><button class="btn" data-act="next">التالي${icon("arrow-left")}</button></div></div>`;
+  }
+  function tabs() {
+    const el = document.getElementById("tabs");
+    const list = [["phone", "smartphone", "الساكن"], ["gate", "tablet", "البوابة"], ["dash", "monitor", "الإدارة"]];
+    el.innerHTML = list.map(([k, ic, l]) => `<button role="tab" data-act="tab" data-v="${k}" aria-selected="${UI.tab === k}">${icon(ic)}${l}${S.ping[k] && UI.tab !== k ? '<span class="dot" aria-label="جديد"></span>' : ""}</button>`).join("");
+    ["phone", "gate", "dash"].forEach((k) => document.getElementById("dev-" + k).classList.toggle("show", UI.tab === k));
+  }
+
+  // ---------- render all ----------
+  function render() {
+    const f = document.activeElement && document.activeElement.id;
+    const sel = f && document.activeElement.selectionStart;
+    if (!UI.holding) document.getElementById("phone").innerHTML = phone();
+    document.getElementById("gate").innerHTML = gate();
+    document.getElementById("dash").innerHTML = dash();
+    guide(); tabs();
+    document.getElementById("mode-tour").setAttribute("aria-pressed", UI.mode === "tour");
+    document.getElementById("mode-free").setAttribute("aria-pressed", UI.mode === "free");
+    document.getElementById("sound").innerHTML = `${icon(UI.sound ? "volume-2" : "volume-x")}${UI.sound ? "الصوت يعمل" : "الصوت مغلق"}`;
+    document.getElementById("sound").setAttribute("aria-pressed", UI.sound);
+    // highlight
+    document.querySelectorAll(".device .here").forEach((h) => (h.hidden = true));
+    const st = UI.mode === "tour" ? STEPS[UI.step] : null;
+    if (st) {
+      document.querySelector(`#dev-${st.dev} .here`).hidden = false;
+      const t = st.target();
+      const el = t && document.querySelector(`[data-tour="${t}"]`);
+      const key = UI.step + ":" + t;
+      if (el) { el.classList.add("hot"); if (vis(st.dev) && UI.scrolled !== key) { UI.scrolled = key; el.scrollIntoView({ block: "nearest", behavior: "smooth" }); } }
+    }
+    if (window.lucide) window.lucide.createIcons({ attrs: { "stroke-width": 1.8 } });
+    if (f) { const el = document.getElementById(f); if (el && el.focus) { el.focus(); try { if (sel != null) el.setSelectionRange(sel, sel); } catch {} } }
+  }
+
+  // ---------- input ----------
+  const ACT = {
+    mode: (d) => { UI.mode = d.v; store.set("bawaba-demo-mode", d.v); if (d.v === "tour") { S = fresh(); UI.step = 0; focusStep(); } },
+    sound: () => { UI.sound = !UI.sound; if (!UI.sound) stopAlarm(); else if (S.gate.alert) alarm(); },
+    reset: () => { stopAlarm(); S = fresh(); UI.step = 0; UI.tab = "phone"; },
+    next: () => next(),
+    tab: (d) => { UI.tab = d.v; S.ping[d.v] = false; },
+    "r-visitor": () => openVisitor(),
+    "r-delivery": () => { S.phone.screen = "delivery"; },
+    "r-home": () => { S.phone.screen = "home"; S.phone.err = ""; },
+    "r-ann": () => { S.phone.screen = "ann"; S.anns.forEach((a) => (a.fresh = UI.mode === "tour" ? a.fresh : false)); },
+    "r-orders": () => { S.phone.screen = "orders"; },
+    "r-car": (d) => { S.phone.form.car = d.v; },
+    "r-people": (d) => { S.phone.form.people = Math.min(20, Math.max(1, S.phone.form.people + Number(d.v))); },
+    "r-send": () => { if (UI.mode === "tour" && UI.step <= 1) tourCreate(); else createPass(); },
+    "r-partner": (d) => createDelivery(d.id),
+    "r-cancel": (d) => cancelPass(d.id),
+    "r-emg": (d) => raise(d.v),
+    "r-qty": (d) => { S.phone.qty[d.id] = Math.min(20, Math.max(1, S.phone.qty[d.id] + Number(d.v))); },
+    "r-place": (d) => placeOrder(d.id, S.phone.qty[d.id]),
+    "r-ocancel": (d) => cancelOrder(d.id),
+    "r-push": () => { S.phone.screen = S.phone.push ? S.phone.push.go : S.phone.screen; S.phone.push = null; },
+    "g-tab": (d) => { S.gate.tab = d.v; },
+    "g-admit": (d) => admit(d.id),
+    "g-exit": (d) => exitPass(d.id),
+    "g-courier": () => { S.gate.courier = { partner: null, unit: "" }; },
+    "g-courier-close": () => { S.gate.courier = null; },
+    "g-partner": (d) => { S.gate.courier.partner = d.id; },
+    "g-key": (d) => { const c = S.gate.courier; if (d.v === "del") c.unit = c.unit.slice(0, -1); else if (d.v === "clr") c.unit = ""; else if (c.unit.length < 4) c.unit += d.v; },
+    "g-courier-admit": () => courierAdmit(),
+    "g-courier-hold": () => courierHold(),
+    "g-ack": () => acknowledge(),
+    "g-net": () => setOffline(!S.gate.offline),
+    "d-nav": (d) => { S.dash.page = d.v; S.dash.fresh = S.dash.fresh; },
+    "d-emg-close": () => { S.emergency.status = "closed"; },
+    "d-export": () => toast("dash", "في المنتج يُنزَّل ملف Excel بالسجلات المعروضة، ويُسجَّل التصدير في سجل العمليات."),
+    "d-send": (d) => sendBatch(d.id),
+    "d-delivered": (d) => delivered(d.id),
+    "d-publish": () => publish(),
+  };
+  document.addEventListener("click", (ev) => {
+    const b = ev.target.closest("[data-act]");
+    if (!b || b.disabled) return;
+    const fn = ACT[b.dataset.act]; if (!fn) return;
+    ev.preventDefault();
+    if (actx && actx.state === "suspended") actx.resume();
+    fn(b.dataset);
+    if (b.dataset.act === "next" || b.dataset.act === "mode" || b.dataset.act === "reset") render(); else afterAction();
+  });
+  document.addEventListener("input", (ev) => {
+    const k = ev.target.dataset && ev.target.dataset.in; if (!k) return;
+    const v = ev.target.type === "checkbox" ? ev.target.checked : ev.target.value;
+    if (k === "v-name") { S.phone.form.name = v; if (S.phone.err && v.trim()) S.phone.err = ""; }
+    else if (k === "g-search") { S.gate.search = v; document.getElementById("gate").innerHTML = gate(); if (window.lucide) lucide.createIcons({ attrs: { "stroke-width": 1.8 } }); const i = document.getElementById("g-search"); i.focus(); i.setSelectionRange(v.length, v.length); }
+    else if (k === "a-title") S.dash.draft.title = v;
+    else if (k === "a-body") S.dash.draft.body = v;
+    else if (k === "a-urgent") S.dash.draft.urgent = v;
+  });
+  document.addEventListener("keydown", (ev) => {
+    if (ev.key === "Enter" && ev.target.dataset && ev.target.dataset.in === "v-name") { ev.preventDefault(); ACT["r-send"](); afterAction(); }
+  });
+
+  // long press for the emergency button (3 seconds), mouse, touch and keyboard
+  let holdStart = 0, holdTimer = 0;
+  function holdBegin(btn) {
+    UI.holding = true; holdStart = Date.now();
+    holdTimer = setInterval(() => {
+      const p = Math.min(1, (Date.now() - holdStart) / 3000);
+      btn.style.setProperty("--p", p);
+      if (p >= 1) holdEnd(btn, true);
+    }, 40);
+  }
+  function holdEnd(btn, complete) {
+    clearInterval(holdTimer);
+    if (!UI.holding) return;
+    UI.holding = false;
+    btn.style.setProperty("--p", 0);
+    if (complete) { S.phone.screen = "sosType"; if (navigator.vibrate) try { navigator.vibrate(80); } catch {} beep(1); }
+    render();
+  }
+  document.addEventListener("pointerdown", (ev) => { const b = ev.target.closest("[data-hold]"); if (b) { ev.preventDefault(); if (actx && actx.state === "suspended") actx.resume(); holdBegin(b); } });
+  ["pointerup", "pointercancel", "pointerleave"].forEach((t) => document.addEventListener(t, (ev) => { const b = document.querySelector("[data-hold]"); if (UI.holding && b && (t !== "pointerleave" || ev.target === b)) holdEnd(b, false); }, true));
+  document.addEventListener("keydown", (ev) => { const b = ev.target.closest && ev.target.closest("[data-hold]"); if (b && (ev.key === " " || ev.key === "Enter") && !ev.repeat && !UI.holding) { ev.preventDefault(); holdBegin(b); } });
+  document.addEventListener("keyup", (ev) => { const b = ev.target.closest && ev.target.closest("[data-hold]"); if (b && (ev.key === " " || ev.key === "Enter")) holdEnd(b, false); });
+  document.addEventListener("contextmenu", (ev) => { if (ev.target.closest("[data-hold]")) ev.preventDefault(); });
+
+  window.matchMedia("(max-width: 1239px)").addEventListener("change", () => render());
+
+  S = fresh();
+  if (UI.mode === "tour") focusStep();
+  render();
+})();
+</script>
+</body>
+</html>
