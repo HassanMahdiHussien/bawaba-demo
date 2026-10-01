@@ -254,6 +254,20 @@ tr.new td { background: var(--successSoft); }
 .check { display: flex; gap: 8px; align-items: center; font-weight: 700; min-height: 44px; }
 .check input { width: 20px; height: 20px; accent-color: var(--primary); }
 
+/* Marketplace and suggestions */
+.t-ok { background: var(--successSoft); color: var(--successInk); }
+.t-brand { background: var(--primarySoft); color: var(--primaryInk); }
+.mcard { display: grid; gap: 6px; }
+.mcard .price { font-weight: 800; color: var(--primaryInk); }
+.mcard small, .scard small { color: var(--muted); font-size: 13px; }
+.mrow { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.vote { display: inline-flex; align-items: center; gap: 6px; border: 1.5px solid var(--lineStrong); background: var(--surface); color: var(--primaryInk); border-radius: 22px; min-height: 44px; padding: 0 14px; font-weight: 800; justify-self: start; }
+.vote[aria-pressed="true"] { background: var(--primarySoft); border-color: var(--primary); }
+.reply { border-top: 1px solid var(--line); padding-top: 8px; display: grid; gap: 4px; }
+.reply p { margin: 0; }
+.input.area { min-height: 84px; font-size: 15px; font-weight: 500; }
+.dselect { border: 1px solid var(--lineStrong); border-radius: 14px; min-height: 44px; padding: 0 10px; background: var(--surface); font: inherit; }
+
 /* Finish panel */
 .finish { display: grid; gap: 10px; }
 .finish ul { margin: 0; padding-inline-start: 20px; display: grid; gap: 4px; columns: 2; }
@@ -342,6 +356,12 @@ tr.new td { background: var(--successSoft); }
   const TYPES = { once: "زيارة", recurring: "دوري", worker: "عمّال", delivery: "توصيل" };
   const EMG = { fire: "حريق", theft: "سرقة", medical: "حالة طبية", other: "أخرى" };
   const CARS = ["بدون مركبة", "تويوتا كامري بيضاء", "هيونداي إلنترا فضية", "كيا سبورتج رمادية"];
+  const KINDS = { item: "غرض للبيع", business: "عمل منزلي", service: "خدمة" };
+  const SSTAT = { open: ["جديد", "b-mute"], studying: ["قيد الدراسة", "b-warn"], planned: ["مخطط له", "b-warn"], in_progress: ["قيد التنفيذ", "b-warn"], done: ["منجز", "b-ok"], rejected: ["مرفوض", "b-brand"] };
+  const money = (n) => n == null ? "السعر عند التواصل" : `${Number(n).toLocaleString("en-US")} دينار`;
+  const MARKET_DRAFT = () => ({ kind: "item", title: "طاولة دراسة خشبية", price: "50000" });
+  const SUGG_DRAFT = () => ({ title: "مظلة لموقف الحافلة المدرسية", body: "ينتظر الأطفال صباحًا تحت الشمس والمطر.", anon: true });
+  const REPLY_DRAFT = "طلبنا عرض سعر للمظلة، ويبدأ التركيب خلال أسبوعين.";
 
   // ---------- state ----------
   let S, uid;
@@ -373,6 +393,20 @@ tr.new td { background: var(--successSoft); }
       mine: {},
       emergency: null,
       anns: [{ title: "صيانة المصاعد في المبنى ب", body: "تُجرى صيانة دورية للمصاعد يوم الخميس من 9:00 إلى 12:00.", urgent: false, at: "أمس" }],
+      mdraft: MARKET_DRAFT(),
+      listings: [
+        { id: "m1", kind: "item", title: "دراجة هوائية للأطفال", desc: "بحالة جيدة، مقاس 16.", price: 75000, seller: "أم علي", unit: "5", at: "قبل يومين", reports: 0, reasons: [], hidden: false, mine: false },
+        { id: "m2", kind: "business", title: "حلويات منزلية بطلب مسبق", desc: "كليجة وبقلاوة، التسليم داخل المجمع.", price: 15000, seller: "أم حسن", unit: "22", at: "قبل 3 أيام", reports: 0, reasons: [], hidden: false, mine: false },
+        { id: "m3", kind: "service", title: "توصيل بالسيارة داخل بغداد", desc: "صباحًا ومساءً، بحجز مسبق.", price: null, seller: "مهند", unit: "13", at: "قبل أسبوع", reports: 1, reasons: ["ليس عرضًا حقيقيًا"], hidden: false, mine: false },
+      ],
+      sdraft: SUGG_DRAFT(),
+      ssort: "votes",
+      suggs: [
+        { id: "s1", title: "مطبات لتخفيف السرعة قرب الحديقة", body: "المركبات تسير بسرعة حيث يلعب الأطفال.", anon: true, author: "أحمد", unit: "14", votes: 11, my: false, status: "studying", days: 3, reports: 0, hidden: false, mine: false, replies: [{ status: "studying", body: "نراجع المكان مع مهندس المجمع هذا الأسبوع.", at: "أمس" }] },
+        { id: "s2", title: "إصلاح إنارة الشارع الثالث", body: "الإنارة معطلة منذ أسبوعين.", anon: false, author: "مهند", unit: "13", votes: 6, my: true, status: "open", days: 10, reports: 0, hidden: false, mine: false, replies: [] },
+        { id: "s3", title: "زيادة حاويات النفايات", body: "", anon: false, author: "أم علي", unit: "5", votes: 4, my: false, status: "done", days: 20, reports: 1, hidden: false, mine: false, replies: [{ status: "done", body: "أُضيفت أربع حاويات عند المبنى ب.", at: "قبل أسبوعين" }] },
+      ],
+      rdraft: {},
       ping: { phone: false, gate: false, dash: false },
     };
   }
@@ -519,6 +553,51 @@ tr.new td { background: var(--successSoft); }
     S.dash.draft = { title: "", body: "", urgent: false };
     if (d.urgent && UI.sound) beep(2);
   }
+  function publishListing() {
+    const d = S.mdraft; const title = latin(d.title.trim());
+    if (title.length < 2) { toast("phone", "أدخل عنوانًا من حرفين على الأقل."); return; }
+    const p = latin(String(d.price)).replace(/[^\d]/g, "");
+    tick(1);
+    S.listings.unshift({ id: "m" + uid++, kind: d.kind, title, desc: "", price: p ? Number(p) : null, seller: ME.name, unit: ME.unit, at: "الآن", reports: 0, reasons: [], hidden: false, mine: true, fresh: true });
+    S.mdraft = { kind: "item", title: "", price: "" };
+    S.phone.screen = "market";
+    toast("phone", "نُشر إعلانك.");
+    ping("dash");
+  }
+  function publishSugg() {
+    const d = S.sdraft; const title = latin(d.title.trim());
+    if (title.length < 2) { toast("phone", "أدخل عنوانًا من حرفين على الأقل."); return; }
+    tick(1);
+    S.suggs.unshift({ id: "s" + uid++, title, body: latin(d.body.trim()), anon: d.anon, author: ME.name, unit: ME.unit, votes: 0, my: false, status: "open", days: 0, reports: 0, hidden: false, mine: true, replies: [], fresh: true });
+    if (UI.mode === "tour") S.rdraft[S.suggs[0].id] = { status: "in_progress", body: REPLY_DRAFT };
+    S.sdraft = { title: "", body: "", anon: false };
+    S.ssort = "newest";
+    S.phone.screen = "sugg";
+    toast("phone", "نُشر اقتراحك.");
+    ping("dash");
+  }
+  function vote(id) {
+    const s = S.suggs.find((x) => x.id === id); if (!s) return;
+    s.my = !s.my; s.votes += s.my ? 1 : -1;
+  }
+  function reply(id) {
+    const s = S.suggs.find((x) => x.id === id); if (!s) return;
+    const r = S.rdraft[id] || { status: "studying", body: "" };
+    if (latin(r.body.trim()).length < 2) { toast("dash", "اكتب نص الرد، من حرفين إلى 2000 حرف."); return; }
+    tick(1);
+    s.replies.push({ status: r.status, body: latin(r.body.trim()), at: clock(S.t) });
+    s.status = r.status; s.days = 0;
+    delete S.rdraft[id];
+    toast("dash", "أُرسل الرد، وسُجّل في سجل العمليات.");
+    if (s.mine) push(`ردّت الإدارة على اقتراحك: ${SSTAT[r.status][0]}`, "sugg");
+  }
+  const myListing = () => S.listings.find((l) => l.mine);
+  const mySugg = () => S.suggs.find((s) => s.mine);
+  function sortedSuggs() {
+    const list = S.suggs.filter((s) => !s.hidden);
+    return S.ssort === "newest" ? list.slice().sort((a, b) => a.days - b.days) : list.slice().sort((a, b) => b.votes - a.votes || a.days - b.days);
+  }
+
   function setOffline(off) {
     if (off) { S.gate.offline = true; S.gate.lastSync = S.t; return; }
     S.gate.offline = false;
@@ -585,8 +664,26 @@ tr.new td { background: var(--successSoft); }
       target: () => S.dash.page !== "ann" ? "d-nav-ann" : "d-publish", done: () => S.anns.some((a) => a.fresh), auto: () => { S.dash.page = "ann"; if (!S.dash.draft.title) S.dash.draft = fresh().dash.draft; publish(); } },
     { ch: 4, dev: "phone", text: "وصل الإعلان إلى هاتف الساكن. اضغط الإشعار لفتح «الإعلانات»، وفيها كل ما نشرته الإدارة.",
       target: () => S.phone.push ? "r-push" : S.phone.screen === "ann" ? "" : S.phone.screen === "home" ? "r-ann" : "r-back", done: () => false, auto: () => {} },
+    { ch: 5, dev: "phone", text: "سوق الجيران: يبيع السكان أغراضهم ويعرضون أعمالهم المنزلية وخدماتهم داخل المجمع فقط. افتح «السوق» ثم «إضافة إعلان».",
+      target: () => S.phone.screen === "market" ? "r-mnew" : S.phone.screen === "marketNew" ? "" : S.phone.screen === "home" ? "r-market" : "r-back", done: () => S.phone.screen === "marketNew" || !!myListing(), auto: () => { S.phone.screen = "marketNew"; } },
+    { ch: 5, dev: "phone", text: "كتبنا إعلانًا تجريبيًا، والسعر والصور اختيارية. اضغط «نشر الإعلان». يبقى الإعلان 30 يومًا ويُجدَّد، ولكل وحدة 3 إعلانات في الأسبوع.",
+      target: () => "r-mpub", done: () => !!myListing(), auto: () => { if (!S.mdraft.title) S.mdraft = MARKET_DRAFT(); publishListing(); } },
+    { ch: 5, dev: "phone", text: "رقم البائع لا يظهر في أي قائمة. يُطلب لإعلان واحد فقط حين يضغط الجار «اتصال» أو «واتساب». جرّب «اتصال» على إعلان أحد الجيران.",
+      target: () => "r-call-m1", done: () => false, auto: () => {} },
+    { ch: 5, dev: "dash", text: "تراجع الإدارة الإعلانات من لوحتها، والمبلَّغ عنها أولًا، ويمكنها إخفاء أي إعلان. افتح «السوق».",
+      target: () => "d-nav-market", done: () => S.dash.page === "market", auto: () => { S.dash.page = "market"; } },
+    { ch: 6, dev: "phone", text: "الاقتراحات: يقترح الساكن تحسينًا للمجمع، ويستطيع إخفاء اسمه عن السكان. افتح «الاقتراحات» ثم «اقتراح جديد».",
+      target: () => S.phone.screen === "sugg" ? "r-snew" : S.phone.screen === "suggNew" ? "" : S.phone.screen === "home" ? "r-sugg" : "r-back", done: () => S.phone.screen === "suggNew" || !!mySugg(), auto: () => { S.phone.screen = "suggNew"; } },
+    { ch: 6, dev: "phone", text: "اخترنا «دون اسمي»: لن يظهر الاسم لأي ساكن، والإدارة وحدها تعرفه. اضغط «نشر الاقتراح».",
+      target: () => "r-spub", done: () => !!mySugg(), auto: () => { if (!S.sdraft.title) S.sdraft = SUGG_DRAFT(); publishSugg(); } },
+    { ch: 6, dev: "phone", text: "يؤيّد الجيران الاقتراحات بصوت واحد لكل شخص، ويمكن سحبه. لا يعرف أحد من أيّد، ولا حتى الإدارة. اضغط «أؤيّد» على اقتراح المطبات.",
+      target: () => S.phone.screen !== "sugg" ? (S.phone.screen === "home" ? "r-sugg" : "r-back") : "r-vote-s1", done: () => S.suggs.find((s) => s.id === "s1").my, auto: () => { S.phone.screen = "sugg"; const s = S.suggs.find((x) => x.id === "s1"); if (!s.my) vote("s1"); } },
+    { ch: 6, dev: "dash", text: "ترى الإدارة اسم صاحب الاقتراح ووحدته مع ملاحظة أنه طلب إخفاءه، وما ينتظر الرد أكثر من 7 أيام يظهر أولًا. افتح «الاقتراحات» وأرسل الرد بحالة «قيد التنفيذ».",
+      target: () => S.dash.page !== "sugg" ? "d-nav-sugg" : mySugg() ? "d-reply-" + mySugg().id : "", done: () => mySugg() && mySugg().replies.length > 0, auto: () => { S.dash.page = "sugg"; const s = mySugg(); S.rdraft[s.id] = { status: "in_progress", body: REPLY_DRAFT }; reply(s.id); } },
+    { ch: 6, dev: "phone", text: "وصل الرد إلى صاحب الاقتراح، ويراه كل السكان مع الحالة الجديدة.",
+      target: () => S.phone.push ? "r-push" : "", done: () => false, auto: () => {} },
   ];
-  const CHAPTERS = ["زائر", "توصيل", "طوارئ", "طلب جماعي", "إعلان"];
+  const CHAPTERS = ["زائر", "توصيل", "طوارئ", "طلب جماعي", "إعلان", "السوق", "الاقتراحات"];
   const DEVNAME = { phone: "هاتف الساكن", gate: "جهاز البوابة", dash: "لوحة الإدارة" };
 
   function openVisitor() {
@@ -642,6 +739,8 @@ tr.new td { background: var(--successSoft); }
         <div class="tiles">
           <button class="tile t-info" data-act="r-ann" data-tour="r-ann">${icon("megaphone")}الإعلانات</button>
           <button class="tile t-warn" data-act="r-orders" data-tour="r-orders">${icon("shopping-basket")}الطلبات</button>
+          <button class="tile t-brand" data-act="r-market" data-tour="r-market">${icon("store")}السوق</button>
+          <button class="tile t-ok" data-act="r-sugg" data-tour="r-sugg">${icon("lightbulb")}الاقتراحات</button>
         </div>
         <button class="sos" data-hold="sos" data-tour="r-sos"><span class="fill"></span>${icon("siren")}<span>طوارئ</span></button>
         <p class="hint">اضغط مطولًا ثلاث ثوانٍ لإرسال بلاغ طوارئ</p>
@@ -689,9 +788,59 @@ tr.new td { background: var(--successSoft); }
       ${S.anns.map((a) => `<div class="ann"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><b>${esc(a.title)}</b>${a.urgent ? `<span class="badge b-warn">عاجل</span>` : ""}</div><p>${esc(a.body)}</p><small style="color:var(--muted)">${esc(a.at)}</small></div>`).join("")}
     </div></div></div>`;
   }
+  function phoneMarket() {
+    const list = S.listings.filter((l) => !l.hidden);
+    return `${subHead("السوق")}<div class="scroll"><div class="r-body">
+      <p class="hint" style="text-align:start;margin:0">بيع وشراء وخدمات بين الجيران داخل المجمع.</p>
+      <button class="pbtn" data-act="r-mnew" data-tour="r-mnew">${icon("plus")}إضافة إعلان</button>
+      ${list.map((l) => `<div class="card mcard"${l.fresh ? ' style="outline:2px solid var(--success)"' : ""}>
+        <span class="badge b-brand" style="justify-self:start">${KINDS[l.kind]}</span>
+        <b>${esc(l.title)}</b><span class="price num">${money(l.price)}</span>
+        ${l.desc ? `<span>${esc(l.desc)}</span>` : ""}
+        <small>${l.mine ? "إعلانك" : `البائع: ${esc(l.seller)}`} · نُشر ${esc(l.at)}</small>
+        ${l.mine ? "" : `<div class="mrow"><button class="opt" data-act="r-call" data-tour="r-call-${l.id}">${icon("phone")} اتصال</button><button class="opt" data-act="r-call">${icon("message-circle")} واتساب</button><button class="opt" data-act="r-mreport" data-id="${l.id}">إبلاغ</button></div>`}
+      </div>`).join("")}
+    </div></div>`;
+  }
+  function phoneMarketNew() {
+    const d = S.mdraft;
+    return `${subHead("إضافة إعلان")}<div class="scroll"><div class="r-body">
+      <div class="card"><div class="field"><label>النوع</label><div class="opts">${Object.entries(KINDS).map(([k, v]) => `<button class="opt" data-act="r-mkind" data-v="${k}" aria-pressed="${d.kind === k}">${v}</button>`).join("")}</div></div>
+        <div class="field"><label for="m-title">العنوان</label><input class="input" id="m-title" data-in="m-title" value="${esc(d.title)}" autocomplete="off"></div>
+        <div class="field"><label for="m-price">السعر بالدينار (اختياري)</label><input class="input num" id="m-price" data-in="m-price" inputmode="numeric" value="${esc(d.price)}" autocomplete="off"></div>
+        <p class="hint" style="text-align:start;margin:0">يمكن إضافة حتى 3 صور. يبقى الإعلان 30 يومًا.</p></div>
+      <button class="pbtn" data-act="r-mpub" data-tour="r-mpub">${icon("send")}نشر الإعلان</button>
+    </div></div>`;
+  }
+  function authorLine(s) { return s.anon ? "مقترح من أحد السكان" : s.mine ? "اقتراحك" : `مقترح من ${esc(s.author)}`; }
+  function phoneSugg() {
+    return `${subHead("الاقتراحات")}<div class="scroll"><div class="r-body">
+      <p class="hint" style="text-align:start;margin:0">اقتراحات السكان لتحسين المجمع، وردود الإدارة عليها.</p>
+      <div class="opts"><button class="opt" data-act="r-ssort" data-v="votes" aria-pressed="${S.ssort === "votes"}">الأكثر تأييدًا</button><button class="opt" data-act="r-ssort" data-v="newest" aria-pressed="${S.ssort === "newest"}">الأحدث</button></div>
+      <button class="pbtn" data-act="r-snew" data-tour="r-snew">${icon("plus")}اقتراح جديد</button>
+      ${sortedSuggs().map((s) => { const last = s.replies[s.replies.length - 1]; return `<div class="card scard"${s.fresh ? ' style="outline:2px solid var(--success)"' : ""}>
+        <span class="badge ${SSTAT[s.status][1]}" style="justify-self:start">${SSTAT[s.status][0]}</span>
+        <b>${esc(s.title)}</b>${s.body ? `<span>${esc(s.body)}</span>` : ""}
+        <small>${authorLine(s)}</small>
+        <button class="vote" data-act="r-vote" data-id="${s.id}" data-tour="r-vote-${s.id}" aria-pressed="${s.my}">${icon("thumbs-up")}${s.my ? "أيّدته" : "أؤيّد"} · <span class="num">${s.votes}</span> تأييد</button>
+        ${last ? `<div class="reply"><small>ردّ الإدارة · ${esc(last.at)}</small><p>${esc(last.body)}</p></div>` : ""}
+      </div>`; }).join("")}
+    </div></div>`;
+  }
+  function phoneSuggNew() {
+    const d = S.sdraft;
+    return `${subHead("اقتراح جديد")}<div class="scroll"><div class="r-body">
+      <div class="card"><div class="field"><label for="s-title">العنوان</label><input class="input" id="s-title" data-in="s-title" value="${esc(d.title)}" autocomplete="off"></div>
+        <div class="field"><label for="s-body">التفاصيل (اختياري)</label><textarea class="input area" id="s-body" data-in="s-body">${esc(d.body)}</textarea></div>
+        <label class="check"><input type="checkbox" id="s-anon" data-in="s-anon" ${d.anon ? "checked" : ""}>دون اسمي</label>
+        <p class="hint" style="text-align:start;margin:0">لا يظهر اسمك للسكان، وتطّلع عليه الإدارة وحدها.</p></div>
+      <button class="pbtn" data-act="r-spub" data-tour="r-spub">${icon("send")}نشر الاقتراح</button>
+    </div></div>`;
+  }
   function phone() {
     const s = S.phone.screen;
-    let html = s === "visitor" ? phoneVisitor() : s === "delivery" ? phoneDelivery() : s === "orders" ? phoneOrders() : s === "ann" ? phoneAnn() : phoneHome();
+    let html = s === "visitor" ? phoneVisitor() : s === "delivery" ? phoneDelivery() : s === "orders" ? phoneOrders() : s === "ann" ? phoneAnn()
+      : s === "market" ? phoneMarket() : s === "marketNew" ? phoneMarketNew() : s === "sugg" ? phoneSugg() : s === "suggNew" ? phoneSuggNew() : phoneHome();
     if (s === "sosType") html = phoneHome() + `<div class="sheet"><div class="panel"><h4>ما نوع الحالة؟</h4><div class="types">${Object.entries(EMG).map(([k, v]) => `<button data-act="r-emg" data-v="${k}" data-tour="r-emg-${k}">${v}</button>`).join("")}</div><button class="pbtn out" data-act="r-home">إلغاء</button></div></div>`;
     if (S.phone.push) html += `<button class="push" data-act="r-push" data-tour="r-push"><span class="appicon">${icon("bell")}</span><span><b>${COMPOUND} · الآن</b><span>${esc(S.phone.push.text)}</span></span></button>`;
     if (S.phone.toast) html += `<div class="toast">${esc(S.phone.toast)}</div>`;
@@ -755,7 +904,7 @@ tr.new td { background: var(--successSoft); }
   // ---------- render: dashboard ----------
   function dash() {
     const d = S.dash;
-    const nav = [["overview", "layout-dashboard", "نظرة عامة"], ["entries", "list", "سجل الدخول"], ["orders", "shopping-basket", "الطلبات الجماعية"], ["ann", "megaphone", "الإعلانات"]];
+    const nav = [["overview", "layout-dashboard", "نظرة عامة"], ["entries", "list", "سجل الدخول"], ["orders", "shopping-basket", "الطلبات الجماعية"], ["ann", "megaphone", "الإعلانات"], ["market", "store", "السوق"], ["sugg", "lightbulb", "الاقتراحات"]];
     const e = S.emergency;
     const emg = e && e.status !== "closed" ? `<div class="emg ${e.status}" data-tour="d-emg"><span>${e.status === "raised" ? `بلاغ طوارئ: ${EMG[e.type]} — الوحدة ${ME.unit}` : `بلاغ طوارئ قيد المعالجة: ${EMG[e.type]} — الوحدة ${ME.unit}`} · منذ ${clock(e.at)}</span>
       <span style="display:flex;gap:8px;align-items:center"><span class="badge ${e.status === "raised" ? "b-danger" : "b-ok"}">${e.status === "raised" ? "لم يُستلم بعد" : "تم الاستلام"}</span>${e.status === "ack" ? `<button data-act="d-emg-close">إغلاق</button>` : ""}</span></div>` : "";
@@ -789,6 +938,25 @@ tr.new td { background: var(--successSoft); }
           <label class="check"><input type="checkbox" id="a-urgent" data-in="a-urgent" ${d.draft.urgent ? "checked" : ""}>إعلان عاجل</label>
           <div><button class="dbtn" data-act="d-publish" data-tour="d-publish">${icon("megaphone")}نشر الإعلان</button></div></div>
         <div class="rows">${S.anns.map((a) => `<div class="ann"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><b>${esc(a.title)}</b>${a.urgent ? `<span class="badge b-warn">عاجل</span>` : ""}<small style="color:var(--muted)">${esc(a.at)}</small></div><p>${esc(a.body)}</p></div>`).join("")}</div>`;
+    } else if (d.page === "market") {
+      const list = S.listings.slice().sort((a, b) => b.reports - a.reports);
+      main = `<h3>السوق</h3><p class="d-desc">إعلانات السكان، والمبلَّغ عنها أولًا. لكل وحدة 3 إعلانات في الأسبوع، وتغيّر الإدارة الحد من 1 إلى 20.</p>
+        ${list.map((l) => `<div class="item-card"${l.fresh ? ' style="outline:2px solid var(--success)"' : ""}><header><div><h4>${esc(l.title)}</h4><small>${KINDS[l.kind]} · <span class="num">${money(l.price)}</span> · ${esc(l.seller)}، الوحدة <span class="num">${l.unit}</span></small></div>
+          <span style="display:flex;gap:6px;flex-wrap:wrap">${l.reports ? `<span class="badge b-warn">البلاغات: <span class="num">${l.reports}</span> · ${l.reasons.join("، ")}</span>` : ""}${l.hidden ? `<span class="badge b-mute">مخفي</span>` : `<span class="badge b-ok">معروض</span>`}</span></header>
+          <div><button class="dbtn out" data-act="d-mhide" data-id="${l.id}">${icon(l.hidden ? "eye" : "eye-off")}${l.hidden ? "إعادة الإعلان" : "إخفاء الإعلان"}</button></div></div>`).join("")}`;
+    } else if (d.page === "sugg") {
+      const waiting = (s) => !s.replies.length && s.days > 7;
+      const list = S.suggs.slice().sort((a, b) => waiting(b) - waiting(a) || b.votes - a.votes);
+      main = `<h3>الاقتراحات</h3><p class="d-desc">ما ينتظر الرد أكثر من 7 أيام أولًا. ترى الإدارة صاحب كل اقتراح، ولا يرى أحد من أيّد.</p>
+        ${list.map((s) => { const r = S.rdraft[s.id] || { status: "studying", body: "" }; return `<div class="item-card"${s.fresh ? ' style="outline:2px solid var(--success)"' : ""}>
+          <header><h4>${esc(s.title)}</h4><span style="display:flex;gap:6px;flex-wrap:wrap"><span class="badge ${SSTAT[s.status][1]}">${SSTAT[s.status][0]}</span>${waiting(s) ? `<span class="badge b-warn">ينتظر الرد أكثر من 7 أيام</span>` : ""}${s.reports ? `<span class="badge b-warn">البلاغات: <span class="num">${s.reports}</span></span>` : ""}${s.hidden ? `<span class="badge b-mute">مخفي</span>` : ""}</span></header>
+          ${s.body ? `<span>${esc(s.body)}</span>` : ""}
+          <small>${esc(s.author)}، الوحدة <span class="num">${s.unit}</span>${s.anon ? " · طلب صاحبه إخفاء اسمه عن السكان" : ""} · <span class="num">${s.votes}</span> تأييد</small>
+          ${s.replies.map((x) => `<div class="reply"><small>${SSTAT[x.status][0]} · ${esc(x.at)}</small><p>${esc(x.body)}</p></div>`).join("")}
+          <div class="reply"><div class="mrow"><select class="dselect" data-in="r-status" data-id="${s.id}" aria-label="الحالة">${Object.entries(SSTAT).filter(([k]) => k !== "open").map(([k, v]) => `<option value="${k}" ${r.status === k ? "selected" : ""}>${v[0]}</option>`).join("")}</select></div>
+            <textarea class="input area" data-in="r-body" data-id="${s.id}" id="rb-${s.id}" placeholder="نص الرد">${esc(r.body)}</textarea>
+            <div class="mrow"><button class="dbtn" data-act="d-reply" data-id="${s.id}" data-tour="d-reply-${s.id}">${icon("send")}إرسال الرد</button><button class="dbtn out" data-act="d-shide" data-id="${s.id}">${s.hidden ? "إعادة الاقتراح" : "إخفاء الاقتراح"}</button></div></div>
+        </div>`; }).join("")}`;
     }
     let html = `<div class="d-top"><span class="brandline"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M8 34V8h24v26" fill="none" stroke="#C2502F" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/></svg>بوابة</span><small>إدارة مجمع ${COMPOUND}</small></div>
       <div class="d-shell"><nav class="d-nav" aria-label="أقسام اللوحة">${nav.map(([k, ic, l]) => `<button data-act="d-nav" data-v="${k}" data-tour="d-nav-${k}" ${d.page === k ? 'aria-current="page"' : ""}>${icon(ic)}${l}</button>`).join("")}</nav>
@@ -802,14 +970,14 @@ tr.new td { background: var(--successSoft); }
     const el = document.getElementById("guide");
     if (UI.mode === "free") {
       el.innerHTML = `<div class="step-row"><div class="step-text"><div class="step-meta"><span class="where">${icon("hand")}تجربة حرة</span></div>
-        <p>كل الشاشات متصلة: سجّل زائرًا أو توصيلًا من هاتف الساكن، وأدخله من البوابة، وتابع كل شيء في لوحة الإدارة. جرّب أيضًا زر «متصل» في جهاز البوابة لمحاكاة انقطاع الاتصال ثم عودته، أو «إلغاء» تصريح فعّال من هاتف الساكن.</p></div>
+        <p>كل الشاشات متصلة: سجّل زائرًا أو توصيلًا من هاتف الساكن، وأدخله من البوابة، وتابع كل شيء في لوحة الإدارة. وجرّب «السوق» و«الاقتراحات» من هاتف الساكن، وردّ على الاقتراحات من لوحة الإدارة. جرّب أيضًا زر «متصل» في جهاز البوابة لمحاكاة انقطاع الاتصال ثم عودته، أو «إلغاء» تصريح فعّال من هاتف الساكن.</p></div>
         <div class="step-btns"><button class="btn out" data-act="mode" data-v="tour">${icon("route")}ابدأ الجولة الموجّهة</button></div></div>`;
       return;
     }
     if (UI.step >= STEPS.length) {
       el.innerHTML = `<div class="finish"><h2 style="font-size:20px">انتهت الجولة</h2>
-        <p style="margin:0">رأيت خمس حالات يومية تمر عبر الأجهزة الثلاثة. وهذا ما يعمل في المنتج اليوم أيضًا:</p>
-        <ul><li>تفعيل حساب الساكن برمز لمرة واحدة ثم رمز سري من 6 أرقام</li><li>عزل كامل لبيانات كل مجمع عن غيره في قاعدة البيانات</li><li>عمل البوابة دون اتصال ومزامنتها عند عودته</li><li>زائر غير مسجّل: يُسأل أهل الوحدة من التطبيق أو بالاتصال</li><li>تصاريح دورية وللعمّال وللمناسبات</li><li>طلبات الصيانة مع الصور والتقييم</li><li>دليل الخدمات وسياسة التوصيل لكل وحدة</li><li>استيراد الوحدات والسكان من Excel وقائمة زوار اليوم المطبوعة</li></ul>
+        <p style="margin:0">رأيت سبع حالات يومية تمر عبر الأجهزة الثلاثة. وهذا ما يعمل في المنتج اليوم أيضًا:</p>
+        <ul><li>لوحة لمالك المنصة: إنشاء المجمعات وإداراتها، وإيقاف مجمع مؤقتًا</li><li>تفعيل حساب الساكن برمز لمرة واحدة ثم رمز سري من 6 أرقام</li><li>عزل كامل لبيانات كل مجمع عن غيره في قاعدة البيانات</li><li>عمل البوابة دون اتصال ومزامنتها عند عودته</li><li>زائر غير مسجّل: يُسأل أهل الوحدة من التطبيق أو بالاتصال</li><li>تصاريح دورية وللعمّال وللمناسبات</li><li>طلبات الصيانة مع الصور والتقييم</li><li>دليل الخدمات وسياسة التوصيل لكل وحدة</li><li>استيراد الوحدات والسكان من Excel وقائمة زوار اليوم المطبوعة</li></ul>
         <div class="step-btns"><button class="btn" data-act="mode" data-v="free">${icon("hand")}تجربة حرة</button><button class="btn out" data-act="reset">${icon("rotate-ccw")}إعادة الجولة</button></div></div>`;
       return;
     }
@@ -892,6 +1060,20 @@ tr.new td { background: var(--successSoft); }
     "d-send": (d) => sendBatch(d.id),
     "d-delivered": (d) => delivered(d.id),
     "d-publish": () => publish(),
+    "r-market": () => { S.phone.screen = "market"; },
+    "r-mnew": () => { S.phone.screen = "marketNew"; if (UI.mode === "tour" && !S.mdraft.title) S.mdraft = MARKET_DRAFT(); },
+    "r-mkind": (d) => { S.mdraft.kind = d.v; },
+    "r-mpub": () => publishListing(),
+    "r-call": () => toast("phone", "في المنتج يُطلب رقم البائع لهذا الإعلان وحده لحظة الضغط، ثم يُفتح الاتصال أو واتساب."),
+    "r-mreport": (d) => { const l = S.listings.find((x) => x.id === d.id); if (l && !l.reported) { l.reported = true; l.reports++; l.reasons = [...new Set([...l.reasons, "محتوى غير لائق"])]; toast("phone", "وصل بلاغك إلى الإدارة."); ping("dash"); } else toast("phone", "سبق أن أبلغت عن هذا الإعلان."); },
+    "r-sugg": () => { S.phone.screen = "sugg"; },
+    "r-snew": () => { S.phone.screen = "suggNew"; if (UI.mode === "tour" && !S.sdraft.title) S.sdraft = SUGG_DRAFT(); },
+    "r-spub": () => publishSugg(),
+    "r-ssort": (d) => { S.ssort = d.v; },
+    "r-vote": (d) => vote(d.id),
+    "d-mhide": (d) => { const l = S.listings.find((x) => x.id === d.id); l.hidden = !l.hidden; toast("dash", l.hidden ? "أُخفي الإعلان." : "أُعيد الإعلان."); },
+    "d-reply": (d) => reply(d.id),
+    "d-shide": (d) => { const s = S.suggs.find((x) => x.id === d.id); s.hidden = !s.hidden; toast("dash", s.hidden ? "أُخفي الاقتراح." : "أُعيد الاقتراح."); },
   };
   document.addEventListener("click", (ev) => {
     const b = ev.target.closest("[data-act]");
@@ -910,6 +1092,12 @@ tr.new td { background: var(--successSoft); }
     else if (k === "a-title") S.dash.draft.title = v;
     else if (k === "a-body") S.dash.draft.body = v;
     else if (k === "a-urgent") S.dash.draft.urgent = v;
+    else if (k === "m-title") S.mdraft.title = v;
+    else if (k === "m-price") S.mdraft.price = v;
+    else if (k === "s-title") S.sdraft.title = v;
+    else if (k === "s-body") S.sdraft.body = v;
+    else if (k === "s-anon") S.sdraft.anon = v;
+    else if (k === "r-body" || k === "r-status") { const id = ev.target.dataset.id; S.rdraft[id] = S.rdraft[id] || { status: "studying", body: "" }; S.rdraft[id][k === "r-body" ? "body" : "status"] = v; }
   });
   document.addEventListener("keydown", (ev) => {
     if (ev.key === "Enter" && ev.target.dataset && ev.target.dataset.in === "v-name") { ev.preventDefault(); ACT["r-send"](); afterAction(); }
