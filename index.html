@@ -285,7 +285,6 @@ tr.new td { background: var(--successSoft); }
 .stars .on svg { fill: var(--warning); }
 .thumb { width: 72px; height: 56px; border-radius: 12px; background: var(--infoSoft); color: var(--infoInk); display: grid; place-items: center; }
 .soon { background: var(--infoSoft); color: var(--infoInk); border-radius: 22px; padding: 2px 10px; font-size: 12px; font-weight: 800; font-family: var(--body); vertical-align: middle; }
-.chip.soon-chip::after { content: "قريبًا"; margin-inline-start: 4px; font-size: 11px; background: var(--infoSoft); color: var(--infoInk); border-radius: 10px; padding: 0 6px; }
 .fee-big { font-family: var(--display); font-size: 30px; font-weight: 800; }
 .idcard { border: 2px dashed var(--lineStrong); border-radius: 16px; padding: 14px; display: grid; gap: 4px; max-width: 320px; background: var(--ground); }
 .idcard .code { font-family: var(--display); font-size: 24px; font-weight: 800; letter-spacing: 3px; direction: ltr; text-align: start; }
@@ -817,11 +816,11 @@ tr.new td { background: var(--successSoft); }
       target: () => S.dash.page !== "ann" ? "d-nav-ann" : "d-publish", done: () => S.anns.some((a) => a.fresh), auto: () => { S.dash.page = "ann"; if (!S.dash.draft.title) { const u = uid; S.dash.draft = fresh().dash.draft; uid = u; } publish(); } },
     { ch: 6, dev: "phone", text: "وصل الإعلان إلى هاتف الساكن. اضغط الإشعار لفتح «الإعلانات»، وفيها كل ما نشرته الإدارة.",
       target: () => S.phone.push ? "r-push" : S.phone.screen === "ann" ? "" : S.phone.screen === "home" ? "r-ann" : "r-back", done: () => false, auto: () => {} },
-    { ch: 7, dev: "phone", text: "رسوم الخدمة الشهرية (قريبًا): يرى المالك أو الساكن ما على وحدته هذا الشهر، وكل ما دفعه من قبل مع وصولاته. افتح «الرسوم».",
+    { ch: 7, dev: "phone", text: "رسوم الخدمة الشهرية: يرى المالك أو الساكن ما على وحدته هذا الشهر، وكل ما دفعه من قبل مع وصولاته. افتح «الرسوم».",
       target: () => S.phone.screen === "fees" ? "" : S.phone.screen === "home" ? "r-fees" : "r-back", done: () => S.phone.screen === "fees" || !!myFee().receipt, auto: () => { S.phone.screen = "fees"; } },
     { ch: 7, dev: "dash", text: "يدفع المالك نقدًا في مكتب الإدارة. افتح «الرسوم» في اللوحة، واضغط «تسجيل دفعة نقدية» أمام الوحدة 12.",
       target: () => S.dash.page !== "fees" ? "d-nav-fees" : "d-pay-12", done: () => !!myFee().receipt, auto: () => { S.dash.page = "fees"; recordPayment("12"); } },
-    { ch: 7, dev: "phone", text: "وصل المالكَ وصلٌ رقمي في اللحظة نفسها، ويبقى في سجلّه، فلا خلاف على ما دُفع. والدفع الإلكتروني (زين كاش، FIB، كي كارد) في مرحلة لاحقة.",
+    { ch: 7, dev: "phone", text: "وصل المالكَ وصلٌ رقمي في اللحظة نفسها، ويبقى في سجلّه، فلا خلاف على ما دُفع.",
       target: () => S.phone.push ? "r-push" : S.phone.screen === "fees" ? "r-receipt" : S.phone.screen === "home" ? "r-fees" : "r-back", done: () => false, auto: () => { S.phone.push = null; S.phone.screen = "fees"; } },
     { ch: 7, dev: "dash", text: "وترى الإدارة نسبة التحصيل والمتأخرات لكل وحدة دون دفاتر، بما فيها الوحدات التي يملكها مالك غير مقيم.",
       target: () => S.dash.page !== "fees" ? "d-nav-fees" : "d-fee-kpis", done: () => false, auto: () => { S.dash.page = "fees"; } },
@@ -845,7 +844,6 @@ tr.new td { background: var(--successSoft); }
       target: () => S.phone.push ? "r-push" : "", done: () => false, auto: () => {} },
   ];
   const CHAPTERS = ["زائر", "زائر بلا تصريح", "توصيل", "طوارئ", "طلب صيانة", "طلب جماعي", "إعلان", "الرسوم", "السوق", "الاقتراحات"];
-  const SOON_CH = 7;
   const DEVNAME = { phone: "هاتف الساكن", gate: "جهاز البوابة", dash: "لوحة الإدارة" };
 
   function openVisitor() {
@@ -909,7 +907,7 @@ tr.new td { background: var(--successSoft); }
           <button class="tile t-brand" data-act="r-market" data-tour="r-market">${icon("store")}السوق</button>
           <button class="tile t-ok" data-act="r-sugg" data-tour="r-sugg">${icon("lightbulb")}الاقتراحات</button>
           <button class="tile t-mute" data-act="r-tickets" data-tour="r-tickets">${icon("wrench")}الصيانة</button>
-          <button class="tile t-mute" data-act="r-fees" data-tour="r-fees">${icon("wallet")}<span>الرسوم <span class="soon">قريبًا</span></span></button>
+          <button class="tile t-mute" data-act="r-fees" data-tour="r-fees">${icon("wallet")}<span>الرسوم</span></button>
         </div>
         <button class="sos" data-hold="sos" data-tour="r-sos"><span class="fill"></span>${icon("siren")}<span>طوارئ</span></button>
         <p class="hint">اضغط مطولًا ثلاث ثوانٍ لإرسال بلاغ طوارئ</p>
@@ -1036,14 +1034,13 @@ tr.new td { background: var(--successSoft); }
   }
   function phoneFees() {
     const f = myFee();
-    return `${subHead(`الرسوم <span class="soon">قريبًا</span>`)}<div class="scroll"><div class="r-body">
+    return `${subHead("الرسوم")}<div class="scroll"><div class="r-body">
       <div class="card"><small style="color:var(--muted)">رسوم الخدمة · ${FEE_MONTH} · الوحدة ${ME.unit}</small>
         <span class="fee-big num">${money(f.due)}</span>
         ${f.receipt ? `<span class="badge b-ok" style="justify-self:start">مدفوعة</span>
           <div class="status-card sc-ok" data-tour="r-receipt">${icon("receipt")}<span>وصل رقم <span class="num">${f.receipt}</span><br><small style="font-weight:500">دُفعت نقدًا في مكتب الإدارة · ${esc(f.at)} · استلمها: إدارة مجمع ${COMPOUND}</small></span></div>`
           : `<span class="badge b-warn" style="justify-self:start">غير مدفوعة</span><p class="hint" style="text-align:start;margin:0">ادفع نقدًا في مكتب إدارة المجمع، ويصلك وصل رقمي هنا فورًا.</p>`}
       </div>
-      <button class="pbtn out" disabled>${icon("smartphone")}الدفع الإلكتروني: زين كاش، FIB، كي كارد <span class="soon">لاحقًا</span></button>
       <h4 class="sec-title">السجل</h4>
       <div class="rows">${S.feeHistory.map((h) => `<div class="row"><div class="grow"><b>${h.month}</b><small>وصل رقم <span class="num">${h.receipt}</span> · ${h.at}</small></div><span class="badge b-ok num">${money(h.amount)}</span></div>`).join("")}</div>
     </div></div>`;
@@ -1203,14 +1200,14 @@ tr.new td { background: var(--successSoft); }
       const collected = paid.reduce((n, f) => n + f.due, 0);
       const owed = S.fees.filter((f) => !f.receipt).reduce((n, f) => n + f.due, 0);
       const late = S.fees.filter((f) => !f.receipt && f.due > FEE);
-      main = `<h3>الرسوم <span class="soon">قريبًا</span></h3><p class="d-desc">${FEE_MONTH} · ${money(FEE)} للوحدة شهريًا. يدفع المالك نقدًا في المكتب، وتسجّل الإدارة الدفعة فيصله وصل رقمي.</p>
+      main = `<h3>الرسوم</h3><p class="d-desc">${FEE_MONTH} · ${money(FEE)} للوحدة شهريًا. يدفع المالك نقدًا في المكتب، وتسجّل الإدارة الدفعة فيصله وصل رقمي.</p>
         <div class="kpis" data-tour="d-fee-kpis"><div class="kpi"><b class="num">${Math.round((paid.length / S.fees.length) * 100)}%</b><small>نسبة التحصيل (${paid.length} من ${S.fees.length})</small></div><div class="kpi"><b class="num">${collected.toLocaleString("en-US")}</b><small>المحصّل هذا الشهر (دينار)</small></div><div class="kpi"><b class="num">${owed.toLocaleString("en-US")}</b><small>غير مدفوع (دينار)</small></div><div class="kpi"><b class="num">${late.length}</b><small>وحدات متأخرة أكثر من شهر</small></div></div>
         <div class="table-card"><table><thead><tr><th>المبنى</th><th>الوحدة</th><th>المالك</th><th>المستحق</th><th>الحالة</th><th></th></tr></thead><tbody>
         ${S.fees.map((f) => `<tr class="${f.me && f.receipt ? "new" : ""}"><td>${f.b}</td><td class="num">${f.u}</td><td>${esc(f.owner)}</td><td class="num">${f.due.toLocaleString("en-US")}</td>
           <td>${f.receipt ? `<span class="badge b-ok">مدفوعة · وصل <span class="num">${f.receipt}</span></span>` : f.due > FEE ? `<span class="badge b-danger">متأخرة ${f.due / FEE} أشهر</span>` : `<span class="badge b-warn">غير مدفوعة</span>`}</td>
           <td>${f.receipt ? `<small>${esc(f.at)}</small>` : `<button class="dbtn" style="min-height:36px" data-act="d-pay" data-v="${f.u}" data-tour="d-pay-${f.u}">${icon("banknote")}تسجيل دفعة نقدية</button>`}</td></tr>`).join("")}
         </tbody></table></div>
-        <p class="d-desc" style="margin:0">ميزة قادمة، وهذا شكلها المخطط: رسوم لكل وحدة أو لكل نوع وحدة، وتصدير Excel، وتقرير شهري للمستثمر. الدفع الإلكتروني (زين كاش، FIB، كي كارد) في مرحلة لاحقة.</p>`;
+        <p class="d-desc" style="margin:0">تُحدَّد الرسوم لكل وحدة أو لكل نوع وحدة، وتُصدَّر إلى Excel، وتدخل في التقرير الشهري للمستثمر.</p>`;
     } else if (d.page === "setup") {
       const st = S.setup;
       main = `<h3>إعداد المجمع</h3><p class="d-desc">من ملف Excel إلى بطاقات تفعيل مطبوعة في يوم واحد. الملف يخص هذا المجمع وحده، ولا يحتوي عمود المجمع.</p>
@@ -1241,13 +1238,13 @@ tr.new td { background: var(--successSoft); }
     }
     if (UI.step >= STEPS.length) {
       el.innerHTML = `<div class="finish"><h2 style="font-size:20px">انتهت الجولة</h2>
-        <p style="margin:0">رأيت عشر حالات يومية تمر عبر الأجهزة الثلاثة. كلها تعمل في المنتج اليوم ما عدا «الرسوم»، فهي قادمة. وهذا ما يعمل أيضًا:</p>
+        <p style="margin:0">رأيت عشر حالات يومية تمر عبر الأجهزة الثلاثة. وهذا ما يعمل أيضًا:</p>
         <ul><li>تفعيل حساب الساكن برمز لمرة واحدة ثم رمز سري من 6 أرقام</li><li>عزل كامل لبيانات كل مجمع عن غيره في قاعدة البيانات</li><li>عمل البوابة دون اتصال ومزامنتها عند عودته</li><li>تصاريح دورية وللعمّال مع تسجيل الخروج</li><li>دليل الخدمات وسياسة التوصيل لكل وحدة</li><li>استيراد الوحدات والسكان من Excel وطباعة بطاقات التفعيل: صفحة «إعداد المجمع» في اللوحة</li><li>قائمة زوار اليوم المطبوعة لموظف البوابة</li></ul>
         <div class="step-btns"><button class="btn" data-act="mode" data-v="free">${icon("hand")}تجربة حرة</button><button class="btn out" data-act="reset">${icon("rotate-ccw")}إعادة الجولة</button></div></div>`;
       return;
     }
     const st = STEPS[UI.step];
-    el.innerHTML = `<div class="chapters">${CHAPTERS.map((c, i) => `<span class="chip ${i < st.ch ? "done" : i === st.ch ? "now" : ""}${i === SOON_CH ? " soon-chip" : ""}">${i < st.ch ? icon("check") : ""}${i + 1}. ${c}</span>`).join("")}</div>
+    el.innerHTML = `<div class="chapters">${CHAPTERS.map((c, i) => `<span class="chip ${i < st.ch ? "done" : i === st.ch ? "now" : ""}">${i < st.ch ? icon("check") : ""}${i + 1}. ${c}</span>`).join("")}</div>
       <div class="progress" aria-hidden="true"><i style="width:${(UI.step / STEPS.length) * 100}%"></i></div>
       <div class="step-row"><div class="step-text"><div class="step-meta"><span class="num">الخطوة ${UI.step + 1} من ${STEPS.length}</span><span class="where">${icon(st.dev === "phone" ? "smartphone" : st.dev === "gate" ? "tablet" : "monitor")}${DEVNAME[st.dev]}</span></div>
         <p>${st.text}</p></div>
