@@ -381,6 +381,7 @@ tr.new td { background: var(--successSoft); }
   const TREPLY_DRAFT = "يصل السبّاك أبو زينب اليوم بين 10:00 و12:00.";
   const FEE_MONTH = "تشرين الثاني 2026";
   const FEE = 100000;
+  const PAY = { cash: ["نقدًا في مكتب الإدارة", "banknote", "pc-warning"], zain: ["زين كاش", "smartphone", "pc-info"], fib: ["FIB", "landmark", "pc-success"], qi: ["كي كارد", "credit-card", "pc-info"] };
   const EMG = { fire: "حريق", theft: "سرقة", medical: "حالة طبية", other: "أخرى" };
   const CARS = ["بدون مركبة", "تويوتا كامري بيضاء", "هيونداي إلنترا فضية", "كيا سبورتج رمادية"];
   const KINDS = { item: "غرض للبيع", business: "عمل منزلي", service: "خدمة" };
@@ -397,7 +398,7 @@ tr.new td { background: var(--successSoft); }
     const t0 = 7 * 60 + 40;
     return {
       t: t0,
-      phone: { screen: "home", form: { name: "", car: CARS[0], people: 1 }, err: "", push: null, qty: { gas: 1, water: 1 }, toast: "" },
+      phone: { screen: "home", pay: null, payConfirm: false, form: { name: "", car: CARS[0], people: 1 }, err: "", push: null, qty: { gas: 1, water: 1 }, toast: "" },
       gate: { tab: "passes", search: "", courier: null, walkin: null, alert: null, offline: false, queue: [], lastSync: t0, toast: "" },
       dash: { page: "overview", draft: { title: "انقطاع الماء غدًا", body: "ينقطع الماء غدًا من 10:00 إلى 13:00 لأعمال صيانة الخزان الرئيسي.", urgent: true }, toast: "", fresh: null },
       passes: [
@@ -416,16 +417,16 @@ tr.new td { background: var(--successSoft); }
         { id: "t3", cat: "cleaning", body: "تنظيف مدخل المبنى أ بعد أعمال الطلاء.", photo: true, unit: "12", b: "أ", name: "أم أحمد", status: "done", days: 30, replies: [{ status: "done", body: "نُظّف المدخل بالكامل.", at: "الشهر الماضي" }], rating: 5, mine: true, old: true },
       ],
       fees: [
-        { b: "أ", u: "3", owner: "محمد كاظم", due: FEE, receipt: 1101, at: "3 تشرين الثاني" },
-        { b: "أ", u: "5", owner: "أم علي", due: FEE, receipt: 1098, at: "1 تشرين الثاني" },
+        { b: "أ", u: "3", owner: "محمد كاظم", due: FEE, receipt: 1101, at: "3 تشرين الثاني", method: "cash" },
+        { b: "أ", u: "5", owner: "أم علي", due: FEE, receipt: 1098, at: "1 تشرين الثاني", method: "zain" },
         { b: "أ", u: "7", owner: "سارة محمود", due: FEE, receipt: 0 },
         { b: "أ", u: "12", owner: "أم أحمد", due: FEE, receipt: 0, me: true },
-        { b: "ب", u: "13", owner: "مهند", due: FEE, receipt: 1104, at: "5 تشرين الثاني" },
+        { b: "ب", u: "13", owner: "مهند", due: FEE, receipt: 1104, at: "5 تشرين الثاني", method: "fib" },
         { b: "ب", u: "21", owner: "أبو مصطفى", due: FEE * 3, receipt: 0 },
-        { b: "ب", u: "22", owner: "أم حسن", due: FEE, receipt: 1102, at: "4 تشرين الثاني" },
+        { b: "ب", u: "22", owner: "أم حسن", due: FEE, receipt: 1102, at: "4 تشرين الثاني", method: "qi" },
         { b: "ب", u: "30", owner: "كريم عبد الله (مالك غير مقيم)", due: FEE * 2, receipt: 0 },
       ],
-      feeHistory: [{ month: "تشرين الأول 2026", amount: FEE, receipt: 1041, at: "2 تشرين الأول" }, { month: "أيلول 2026", amount: FEE, receipt: 1012, at: "4 أيلول" }],
+      feeHistory: [{ month: "تشرين الأول 2026", amount: FEE, receipt: 1041, at: "2 تشرين الأول", method: "zain" }, { month: "أيلول 2026", amount: FEE, receipt: 1012, at: "4 أيلول", method: "cash" }],
       setup: { imported: false, cards: false },
       entries: [
         { id: "e1", time: 6 * 60 + 48, name: "فني الإنترنت", kind: "زيارة", unit: "21", b: "ب", resp: 14, note: "" },
@@ -707,14 +708,15 @@ tr.new td { background: var(--successSoft); }
     const t = S.tickets.find((x) => x.id === id); if (!t || t.status !== "done") return;
     t.rating = n; toast("phone", "شكرًا، وصل تقييمك إلى الإدارة."); ping("dash");
   }
-  // fees: cash paid at the office, recorded by the administration, a digital receipt to the unit
-  function recordPayment(u) {
+  // fees: paid in the app (ZainCash, FIB, Qi Card) or cash at the office; a digital receipt either way
+  function recordPayment(u, method = "cash") {
     const f = S.fees.find((x) => x.u === u); if (!f || f.receipt) return;
-    tick(1);
+    tick(1); f.method = method;
     f.receipt = Math.max(...S.fees.map((x) => x.receipt), ...S.feeHistory.map((x) => x.receipt)) + 1;
     f.at = `اليوم ${clock(S.t)}`;
-    toast("dash", `سُجّلت دفعة نقدية للوحدة ${u}، وأُرسل وصل رقم ${f.receipt}.`);
-    if (f.me) push(`وصل رقمي: استلمت الإدارة ${money(f.due)} رسوم ${FEE_MONTH}. وصل رقم ${f.receipt}`, "fees");
+    ping("dash");
+    if (method === "cash") { toast("dash", `سُجّلت دفعة نقدية للوحدة ${u}، وأُرسل وصل رقم ${f.receipt}.`); if (f.me) push(`وصل رقمي: استلمت الإدارة ${money(f.due)} رسوم ${FEE_MONTH}. وصل رقم ${f.receipt}`, "fees"); }
+    else { toast("dash", `دفعت الوحدة ${u} عبر ${PAY[method][0]}. وصل رقم ${f.receipt}.`); if (f.me) { S.phone.pay = null; S.phone.payConfirm = false; toast("phone", `تم الدفع عبر ${PAY[method][0]}. وصل رقم ${f.receipt}`); } }
   }
   const myWalkin = () => S.walkins.find((w) => w.unit === ME.unit && w.tour);
   const myTicket = () => S.tickets.find((t) => t.mine && !t.old);
@@ -818,11 +820,13 @@ tr.new td { background: var(--successSoft); }
       target: () => S.phone.push ? "r-push" : S.phone.screen === "ann" ? "" : S.phone.screen === "home" ? "r-ann" : "r-back", done: () => false, auto: () => {} },
     { ch: 7, dev: "phone", text: "رسوم الخدمة الشهرية: يرى المالك أو الساكن ما على وحدته هذا الشهر، وكل ما دفعه من قبل مع وصولاته. افتح «الرسوم».",
       target: () => S.phone.screen === "fees" ? "" : S.phone.screen === "home" ? "r-fees" : "r-back", done: () => S.phone.screen === "fees" || !!myFee().receipt, auto: () => { S.phone.screen = "fees"; } },
-    { ch: 7, dev: "dash", text: "يدفع المالك نقدًا في مكتب الإدارة. افتح «الرسوم» في اللوحة، واضغط «تسجيل دفعة نقدية» أمام الوحدة 12.",
-      target: () => S.dash.page !== "fees" ? "d-nav-fees" : "d-pay-12", done: () => !!myFee().receipt, auto: () => { S.dash.page = "fees"; recordPayment("12"); } },
-    { ch: 7, dev: "phone", text: "وصل المالكَ وصلٌ رقمي في اللحظة نفسها، ويبقى في سجلّه، فلا خلاف على ما دُفع.",
-      target: () => S.phone.push ? "r-push" : S.phone.screen === "fees" ? "r-receipt" : S.phone.screen === "home" ? "r-fees" : "r-back", done: () => false, auto: () => { S.phone.push = null; S.phone.screen = "fees"; } },
-    { ch: 7, dev: "dash", text: "وترى الإدارة نسبة التحصيل والمتأخرات لكل وحدة دون دفاتر، بما فيها الوحدات التي يملكها مالك غير مقيم.",
+    { ch: 7, dev: "phone", text: "يدفع المالك من التطبيق: زين كاش أو FIB أو كي كارد، أو نقدًا في مكتب الإدارة. اختر «زين كاش» ثم اضغط «ادفع».",
+      target: () => S.phone.screen !== "fees" ? (S.phone.screen === "home" ? "r-fees" : "r-back") : S.phone.pay !== "zain" ? "r-paym-zain" : "r-paygo", done: () => S.phone.payConfirm || !!myFee().receipt, auto: () => { S.phone.screen = "fees"; S.phone.pay = "zain"; S.phone.payConfirm = true; } },
+    { ch: 7, dev: "phone", text: "يُفتح تطبيق زين كاش ليؤكّد المالك الدفع برمزه. لا يمر رقم بطاقته أو حسابه عبر بوابة. اضغط «تأكيد الدفع».",
+      target: () => "r-payok", done: () => !!myFee().receipt, auto: () => { S.phone.screen = "fees"; recordPayment(ME.unit, "zain"); } },
+    { ch: 7, dev: "phone", text: "وصل المالكَ وصلٌ رقمي في اللحظة نفسها، ويبقى في سجلّه مع طريقة الدفع، فلا خلاف على ما دُفع.",
+      target: () => S.phone.screen === "fees" ? "r-receipt" : S.phone.screen === "home" ? "r-fees" : "r-back", done: () => false, auto: () => { S.phone.screen = "fees"; } },
+    { ch: 7, dev: "dash", text: "وتظهر الدفعة في لوحة الإدارة فورًا مع طريقتها، ومعها نسبة التحصيل والمتأخرات. ومن يدفع نقدًا تسجّل الإدارة دفعته بزر «تسجيل دفعة نقدية»، فيصله الوصل نفسه.",
       target: () => S.dash.page !== "fees" ? "d-nav-fees" : "d-fee-kpis", done: () => false, auto: () => { S.dash.page = "fees"; } },
     { ch: 8, dev: "phone", text: "سوق الجيران: يبيع السكان أغراضهم ويعرضون أعمالهم المنزلية وخدماتهم داخل المجمع فقط. افتح «السوق» ثم «إضافة إعلان».",
       target: () => S.phone.screen === "market" ? "r-mnew" : S.phone.screen === "marketNew" ? "" : S.phone.screen === "home" ? "r-market" : "r-back", done: () => S.phone.screen === "marketNew" || !!myListing(), auto: () => { S.phone.screen = "marketNew"; } },
@@ -1032,17 +1036,25 @@ tr.new td { background: var(--successSoft); }
       <button class="pbtn" data-act="r-tsend" data-tour="r-tsend">${icon("send")}إرسال الطلب</button>
     </div></div>`;
   }
+  function payBox() {
+    const m = S.phone.pay;
+    return `<div class="card" data-tour="r-paybox"><b>طريقة الدفع</b>
+      <div class="partners" style="grid-template-columns:1fr 1fr">${Object.entries(PAY).map(([k, v]) => `<button class="partner" style="min-height:92px;${m === k ? "border:3px solid var(--ink)" : ""}" data-act="r-paym" data-v="${k}" data-tour="r-paym-${k}" aria-pressed="${m === k}"><span class="pcircle ${v[2]}" style="width:40px;height:40px">${icon(v[1])}</span><span style="font-size:13px">${v[0]}</span></button>`).join("")}</div>
+      ${m === "cash" ? `<p class="hint" style="text-align:start;margin:0">ادفع في مكتب إدارة المجمع. تسجّل الإدارة الدفعة، ويصلك وصل رقمي هنا فورًا.</p>`
+        : m ? `<button class="pbtn" data-act="r-paygo" data-tour="r-paygo">${icon("lock")}ادفع ${money(myFee().due)} عبر ${PAY[m][0]}</button>` : `<p class="hint" style="text-align:start;margin:0">اختر كيف تدفع رسوم هذا الشهر.</p>`}</div>`;
+  }
   function phoneFees() {
     const f = myFee();
     return `${subHead("الرسوم")}<div class="scroll"><div class="r-body">
       <div class="card"><small style="color:var(--muted)">رسوم الخدمة · ${FEE_MONTH} · الوحدة ${ME.unit}</small>
         <span class="fee-big num">${money(f.due)}</span>
         ${f.receipt ? `<span class="badge b-ok" style="justify-self:start">مدفوعة</span>
-          <div class="status-card sc-ok" data-tour="r-receipt">${icon("receipt")}<span>وصل رقم <span class="num">${f.receipt}</span><br><small style="font-weight:500">دُفعت نقدًا في مكتب الإدارة · ${esc(f.at)} · استلمها: إدارة مجمع ${COMPOUND}</small></span></div>`
-          : `<span class="badge b-warn" style="justify-self:start">غير مدفوعة</span><p class="hint" style="text-align:start;margin:0">ادفع نقدًا في مكتب إدارة المجمع، ويصلك وصل رقمي هنا فورًا.</p>`}
+          <div class="status-card sc-ok" data-tour="r-receipt">${icon("receipt")}<span>وصل رقم <span class="num">${f.receipt}</span><br><small style="font-weight:500">${f.method === "cash" ? "دُفعت نقدًا في مكتب الإدارة" : `دُفعت عبر ${PAY[f.method][0]}`} · ${esc(f.at)} · إدارة مجمع ${COMPOUND}</small></span></div>`
+          : `<span class="badge b-warn" style="justify-self:start">غير مدفوعة</span>`}
       </div>
+      ${f.receipt ? "" : payBox()}
       <h4 class="sec-title">السجل</h4>
-      <div class="rows">${S.feeHistory.map((h) => `<div class="row"><div class="grow"><b>${h.month}</b><small>وصل رقم <span class="num">${h.receipt}</span> · ${h.at}</small></div><span class="badge b-ok num">${money(h.amount)}</span></div>`).join("")}</div>
+      <div class="rows">${S.feeHistory.map((h) => `<div class="row"><div class="grow"><b>${h.month}</b><small>وصل رقم <span class="num">${h.receipt}</span> · ${PAY[h.method][0]} · ${h.at}</small></div><span class="badge b-ok num">${money(h.amount)}</span></div>`).join("")}</div>
     </div></div>`;
   }
   function phone() {
@@ -1050,6 +1062,7 @@ tr.new td { background: var(--successSoft); }
     let html = s === "visitor" ? phoneVisitor() : s === "delivery" ? phoneDelivery() : s === "orders" ? phoneOrders() : s === "ann" ? phoneAnn()
       : s === "market" ? phoneMarket() : s === "marketNew" ? phoneMarketNew() : s === "sugg" ? phoneSugg() : s === "suggNew" ? phoneSuggNew()
       : s === "tickets" ? phoneTickets() : s === "ticketNew" ? phoneTicketNew() : s === "fees" ? phoneFees() : phoneHome();
+    if (s === "fees" && S.phone.payConfirm && S.phone.pay) html += `<div class="sheet"><div class="panel"><h4>تأكيد الدفع عبر ${PAY[S.phone.pay][0]}</h4><p style="margin:0">رسوم ${FEE_MONTH} · الوحدة ${ME.unit} · إدارة مجمع ${COMPOUND}</p><span class="fee-big num">${money(myFee().due)}</span><p class="hint" style="text-align:start;margin:0">يُفتح تطبيق ${PAY[S.phone.pay][0]} لتأكيد الدفع برمزك، ولا يمر رقم بطاقتك أو حسابك عبر بوابة.</p><button class="pbtn ok" data-act="r-payok" data-tour="r-payok">${icon("check")}تأكيد الدفع</button><button class="pbtn out" data-act="r-paycancel">إلغاء</button></div></div>`;
     if (s === "sosType") html = phoneHome() + `<div class="sheet"><div class="panel"><h4>ما نوع الحالة؟</h4><div class="types">${Object.entries(EMG).map(([k, v]) => `<button data-act="r-emg" data-v="${k}" data-tour="r-emg-${k}">${v}</button>`).join("")}</div><button class="pbtn out" data-act="r-home">إلغاء</button></div></div>`;
     if (S.phone.push) html += `<button class="push" data-act="r-push" data-tour="r-push"><span class="appicon">${icon("bell")}</span><span><b>${COMPOUND} · الآن</b><span>${esc(S.phone.push.text)}</span></span></button>`;
     if (S.phone.toast) html += `<div class="toast">${esc(S.phone.toast)}</div>`;
@@ -1200,11 +1213,12 @@ tr.new td { background: var(--successSoft); }
       const collected = paid.reduce((n, f) => n + f.due, 0);
       const owed = S.fees.filter((f) => !f.receipt).reduce((n, f) => n + f.due, 0);
       const late = S.fees.filter((f) => !f.receipt && f.due > FEE);
-      main = `<h3>الرسوم</h3><p class="d-desc">${FEE_MONTH} · ${money(FEE)} للوحدة شهريًا. يدفع المالك نقدًا في المكتب، وتسجّل الإدارة الدفعة فيصله وصل رقمي.</p>
+      main = `<h3>الرسوم</h3><p class="d-desc">${FEE_MONTH} · ${money(FEE)} للوحدة شهريًا. يدفع المالك من التطبيق (زين كاش، FIB، كي كارد) أو نقدًا في المكتب، وفي الحالتين يصله وصل رقمي.</p>
         <div class="kpis" data-tour="d-fee-kpis"><div class="kpi"><b class="num">${Math.round((paid.length / S.fees.length) * 100)}%</b><small>نسبة التحصيل (${paid.length} من ${S.fees.length})</small></div><div class="kpi"><b class="num">${collected.toLocaleString("en-US")}</b><small>المحصّل هذا الشهر (دينار)</small></div><div class="kpi"><b class="num">${owed.toLocaleString("en-US")}</b><small>غير مدفوع (دينار)</small></div><div class="kpi"><b class="num">${late.length}</b><small>وحدات متأخرة أكثر من شهر</small></div></div>
-        <div class="table-card"><table><thead><tr><th>المبنى</th><th>الوحدة</th><th>المالك</th><th>المستحق</th><th>الحالة</th><th></th></tr></thead><tbody>
+        <div class="table-card"><table><thead><tr><th>المبنى</th><th>الوحدة</th><th>المالك</th><th>المستحق</th><th>الحالة</th><th>طريقة الدفع</th><th></th></tr></thead><tbody>
         ${S.fees.map((f) => `<tr class="${f.me && f.receipt ? "new" : ""}"><td>${f.b}</td><td class="num">${f.u}</td><td>${esc(f.owner)}</td><td class="num">${f.due.toLocaleString("en-US")}</td>
           <td>${f.receipt ? `<span class="badge b-ok">مدفوعة · وصل <span class="num">${f.receipt}</span></span>` : f.due > FEE ? `<span class="badge b-danger">متأخرة ${f.due / FEE} أشهر</span>` : `<span class="badge b-warn">غير مدفوعة</span>`}</td>
+          <td>${f.receipt ? PAY[f.method][0] : "—"}</td>
           <td>${f.receipt ? `<small>${esc(f.at)}</small>` : `<button class="dbtn" style="min-height:36px" data-act="d-pay" data-v="${f.u}" data-tour="d-pay-${f.u}">${icon("banknote")}تسجيل دفعة نقدية</button>`}</td></tr>`).join("")}
         </tbody></table></div>
         <p class="d-desc" style="margin:0">تُحدَّد الرسوم لكل وحدة أو لكل نوع وحدة، وتُصدَّر إلى Excel، وتدخل في التقرير الشهري للمستثمر.</p>`;
@@ -1320,6 +1334,10 @@ tr.new td { background: var(--successSoft); }
     "r-tsend": () => submitTicket(),
     "r-rate": (d) => rateTicket(d.id, Number(d.v)),
     "r-fees": () => { S.phone.screen = "fees"; },
+    "r-paym": (d) => { S.phone.pay = d.v; },
+    "r-paygo": () => { if (S.phone.pay && S.phone.pay !== "cash") S.phone.payConfirm = true; },
+    "r-payok": () => { recordPayment(ME.unit, S.phone.pay); },
+    "r-paycancel": () => { S.phone.payConfirm = false; },
     "g-walkin": () => openWalkin(),
     "g-walkin-close": () => { S.gate.walkin = null; },
     "g-wsend": () => sendWalkin(),
