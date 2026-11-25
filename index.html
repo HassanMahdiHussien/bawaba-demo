@@ -268,6 +268,28 @@ tr.new td { background: var(--successSoft); }
 .input.area { min-height: 84px; font-size: 15px; font-weight: 500; }
 .dselect { border: 1px solid var(--lineStrong); border-radius: 14px; min-height: 44px; padding: 0 10px; background: var(--surface); font: inherit; }
 
+/* Walk-in, events, maintenance, fees, setup */
+.t-mute { background: var(--line); color: var(--ink); }
+.g-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.g-actions .gbtn { width: 100%; min-width: 0; font-size: 16px; }
+.wk { border-radius: 20px; padding: 14px 16px; display: grid; gap: 10px; }
+.wk.wait { background: var(--warningSoft); color: var(--warningInk); }
+.wk.ok { background: var(--successSoft); color: var(--successInk); }
+.wk b { font-family: var(--display); font-size: 18px; }
+.wk .mrow .gbtn, .wk .mrow .pbtn { flex: 1; min-width: 0; }
+.ev-count { font-family: var(--display); font-weight: 800; font-size: 22px; }
+.ev-count.over { color: var(--warningInk); }
+.stars { display: flex; gap: 4px; }
+.stars button { border: 0; background: transparent; width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; color: var(--warning); }
+.stars svg { width: 26px; height: 26px; }
+.stars .on svg { fill: var(--warning); }
+.thumb { width: 72px; height: 56px; border-radius: 12px; background: var(--infoSoft); color: var(--infoInk); display: grid; place-items: center; }
+.soon { background: var(--infoSoft); color: var(--infoInk); border-radius: 22px; padding: 2px 10px; font-size: 12px; font-weight: 800; font-family: var(--body); vertical-align: middle; }
+.chip.soon-chip::after { content: "قريبًا"; margin-inline-start: 4px; font-size: 11px; background: var(--infoSoft); color: var(--infoInk); border-radius: 10px; padding: 0 6px; }
+.fee-big { font-family: var(--display); font-size: 30px; font-weight: 800; }
+.idcard { border: 2px dashed var(--lineStrong); border-radius: 16px; padding: 14px; display: grid; gap: 4px; max-width: 320px; background: var(--ground); }
+.idcard .code { font-family: var(--display); font-size: 24px; font-weight: 800; letter-spacing: 3px; direction: ltr; text-align: start; }
+
 /* Finish panel */
 .finish { display: grid; gap: 10px; }
 .finish ul { margin: 0; padding-inline-start: 20px; display: grid; gap: 4px; columns: 2; }
@@ -353,7 +375,13 @@ tr.new td { background: var(--successSoft); }
     { id: "w", name: "وصلني", color: "success" },
     { id: "t", name: "طلبك", color: "warning" },
   ];
-  const TYPES = { once: "زيارة", recurring: "دوري", worker: "عمّال", delivery: "توصيل" };
+  const TYPES = { once: "زيارة", recurring: "دوري", worker: "عمّال", delivery: "توصيل", event: "مناسبة", walkin: "بلا تصريح" };
+  const TCATS = { plumbing: "سباكة", electricity: "كهرباء", ac: "تكييف", cleaning: "نظافة", other: "أخرى" };
+  const TSTAT = { new: ["جديد", "b-info"], in_progress: ["قيد التنفيذ", "b-warn"], done: ["منجز", "b-ok"] };
+  const TICKET_DRAFT = () => ({ cat: "plumbing", body: "تسريب ماء تحت مغسلة المطبخ.", photo: true });
+  const TREPLY_DRAFT = "يصل السبّاك أبو زينب اليوم بين 10:00 و12:00.";
+  const FEE_MONTH = "تشرين الثاني 2026";
+  const FEE = 100000;
   const EMG = { fire: "حريق", theft: "سرقة", medical: "حالة طبية", other: "أخرى" };
   const CARS = ["بدون مركبة", "تويوتا كامري بيضاء", "هيونداي إلنترا فضية", "كيا سبورتج رمادية"];
   const KINDS = { item: "غرض للبيع", business: "عمل منزلي", service: "خدمة" };
@@ -371,14 +399,35 @@ tr.new td { background: var(--successSoft); }
     return {
       t: t0,
       phone: { screen: "home", form: { name: "", car: CARS[0], people: 1 }, err: "", push: null, qty: { gas: 1, water: 1 }, toast: "" },
-      gate: { tab: "passes", search: "", courier: null, alert: null, offline: false, queue: [], lastSync: t0, toast: "" },
+      gate: { tab: "passes", search: "", courier: null, walkin: null, alert: null, offline: false, queue: [], lastSync: t0, toast: "" },
       dash: { page: "overview", draft: { title: "انقطاع الماء غدًا", body: "ينقطع الماء غدًا من 10:00 إلى 13:00 لأعمال صيانة الخزان الرئيسي.", urgent: true }, toast: "", fresh: null },
       passes: [
         { id: "p1", name: "سارة محمود", type: "once", unit: "7", b: "أ", car: "كيا سبورتج رمادية", people: 1, status: "active", mine: false, window: "اليوم، من 7:00 إلى 13:00" },
         { id: "p2", name: "عمّال الصيانة — شركة الرافدين", type: "worker", unit: "21", b: "ب", car: "", people: 3, status: "active", mine: false, window: "من الأحد إلى الخميس 8:00–14:00" },
         { id: "p3", name: "أم حسين", type: "recurring", unit: "12", b: "أ", car: "", people: 1, status: "inside", mine: true, window: "كل يوم 7:00–15:00 حتى الإلغاء", enteredAt: 7 * 60 + 2 },
         { id: "p4", name: "محمد كاظم", type: "once", unit: "3", b: "أ", car: "تويوتا كامري بيضاء", people: 2, status: "inside", mine: false, window: "اليوم، من 7:00 إلى 12:00", enteredAt: 7 * 60 + 15 },
+        { id: "p5", name: "استقبال ضيوف — مولود جديد", type: "event", unit: "12", b: "أ", car: "", people: 30, count: 0, status: "active", mine: true, window: "اليوم، من 8:00 إلى 13:00" },
       ],
+      walkins: [],
+      tdraft: TICKET_DRAFT(),
+      treply: {},
+      tickets: [
+        { id: "t1", cat: "ac", body: "مكيّف الصالة لا يبرّد.", photo: true, unit: "7", b: "أ", name: "سارة محمود", status: "new", days: 1, replies: [], rating: 0, mine: false },
+        { id: "t2", cat: "electricity", body: "إنارة الدرج في الطابق الثاني معطلة.", photo: false, unit: "21", b: "ب", name: "أبو مصطفى", status: "in_progress", days: 2, replies: [{ status: "in_progress", body: "الكهربائي يصل غدًا صباحًا.", at: "أمس" }], rating: 0, mine: false },
+        { id: "t3", cat: "cleaning", body: "تنظيف مدخل المبنى أ بعد أعمال الطلاء.", photo: true, unit: "12", b: "أ", name: "أم أحمد", status: "done", days: 30, replies: [{ status: "done", body: "نُظّف المدخل بالكامل.", at: "الشهر الماضي" }], rating: 5, mine: true, old: true },
+      ],
+      fees: [
+        { b: "أ", u: "3", owner: "محمد كاظم", due: FEE, receipt: 1101, at: "3 تشرين الثاني" },
+        { b: "أ", u: "5", owner: "أم علي", due: FEE, receipt: 1098, at: "1 تشرين الثاني" },
+        { b: "أ", u: "7", owner: "سارة محمود", due: FEE, receipt: 0 },
+        { b: "أ", u: "12", owner: "أم أحمد", due: FEE, receipt: 0, me: true },
+        { b: "ب", u: "13", owner: "مهند", due: FEE, receipt: 1104, at: "5 تشرين الثاني" },
+        { b: "ب", u: "21", owner: "أبو مصطفى", due: FEE * 3, receipt: 0 },
+        { b: "ب", u: "22", owner: "أم حسن", due: FEE, receipt: 1102, at: "4 تشرين الثاني" },
+        { b: "ب", u: "30", owner: "كريم عبد الله (مالك غير مقيم)", due: FEE * 2, receipt: 0 },
+      ],
+      feeHistory: [{ month: "تشرين الأول 2026", amount: FEE, receipt: 1041, at: "2 تشرين الأول" }, { month: "أيلول 2026", amount: FEE, receipt: 1012, at: "4 أيلول" }],
+      setup: { imported: false, cards: false },
       entries: [
         { id: "e1", time: 6 * 60 + 48, name: "فني الإنترنت", kind: "زيارة", unit: "21", b: "ب", resp: 14, note: "" },
         { id: "e2", time: 7 * 60 + 2, name: "أم حسين", kind: "دوري", unit: "12", b: "أ", resp: 9, note: "" },
@@ -591,6 +640,87 @@ tr.new td { background: var(--successSoft); }
     toast("dash", "أُرسل الرد، وسُجّل في سجل العمليات.");
     if (s.mine) push(`ردّت الإدارة على اقتراحك: ${SSTAT[r.status][0]}`, "sugg");
   }
+  // walk-in: a visitor with no pass; the unit decides, the first answer wins
+  function sendWalkin() {
+    const w = S.gate.walkin; const name = latin(w.name.trim());
+    if (!name) { toast("gate", "أدخل اسم الزائر."); return false; }
+    if (!w.unit) { toast("gate", "أدخل رقم الوحدة."); return false; }
+    tick(1);
+    S.walkins.unshift({ id: "w" + uid++, tour: UI.mode === "tour", name, unit: w.unit, b: w.unit === ME.unit ? ME.b : "أ", status: "waiting", at: S.t });
+    S.gate.walkin = null;
+    toast("gate", "أُرسل الطلب إلى أهل الوحدة.");
+    if (w.unit === ME.unit) push(`زائر عند البوابة: ${name}. هل تسمح بدخوله؟`);
+    return true;
+  }
+  function decideWalkin(id, ok, by) {
+    const w = S.walkins.find((x) => x.id === id);
+    if (!w || w.status !== "waiting") { if (by === "app") toast("phone", "سبق أن قرّر أحد أفراد الوحدة."); return; }
+    tick(1); w.status = ok ? "allowed" : "rejected"; w.by = by;
+    if (by === "app") toast("phone", ok ? "أُبلغت البوابة بالسماح." : "أُبلغت البوابة بالرفض.");
+    ping("gate");
+    if (!ok) {
+      S.gate.alert = { kind: "reject", title: "مرفوض", line: `${w.name} — الوحدة ${w.unit}`, sentence: by === "app" ? "رفض أهل الوحدة دخول هذا الزائر." : "رُفض الدخول بعد الاتصال." };
+      alarm();
+    }
+  }
+  function walkinAdmit(id) {
+    const w = S.walkins.find((x) => x.id === id);
+    if (!w || w.status !== "allowed") return;
+    tick(1); w.status = "inside";
+    const r = resp();
+    S.passes.unshift({ id: "p" + uid++, name: w.name, type: "walkin", unit: w.unit, b: w.b, car: "", people: 1, status: "inside", mine: w.unit === ME.unit, window: w.by === "call" ? "بموافقة بالاتصال" : "بموافقة من التطبيق", enteredAt: S.t });
+    record({ id: "e" + uid++, time: S.t, name: w.name, kind: "بلا تصريح", unit: w.unit, b: w.b, resp: r, note: w.by === "call" ? "وافق أهل الوحدة بالاتصال" : "وافق أهل الوحدة من التطبيق" });
+    toast("gate", "تم تسجيل الدخول.");
+    if (w.unit === ME.unit && !S.gate.offline) push(`دخل ${w.name} الساعة ${clock(S.t)}`);
+  }
+  // event pass: guests are counted, not named
+  function eventTap(id, n) {
+    const p = S.passes.find((x) => x.id === id);
+    if (!p || p.type !== "event") return;
+    tick(1); p.count += n;
+    record({ id: "e" + uid++, time: S.t, name: `ضيوف: ${p.name}`, kind: "مناسبة", unit: p.unit, b: p.b, resp: resp(), note: `+${n} (المجموع ${p.count} من ${p.people})` });
+    toast("gate", `دخل ${p.count} من ${p.people} ضيفًا متوقعًا.`);
+    if (p.count > p.people && !p.warned) { p.warned = true; if (p.mine) push(`تجاوز ضيوف مناسبتك العدد المتوقع: دخل ${p.count} من ${p.people}`); }
+  }
+  // maintenance tickets
+  function submitTicket() {
+    const d = S.tdraft; const body = latin(d.body.trim());
+    if (body.length < 2) { toast("phone", "اكتب وصف المشكلة."); return; }
+    tick(1);
+    const id = "t" + uid++;
+    S.tickets.unshift({ id, cat: d.cat, body, photo: d.photo, unit: ME.unit, b: ME.b, name: ME.name, status: "new", days: 0, replies: [], rating: 0, mine: true, fresh: true });
+    if (UI.mode === "tour") S.treply[id] = TREPLY_DRAFT;
+    S.tdraft = { cat: "plumbing", body: "", photo: false };
+    S.phone.screen = "tickets";
+    toast("phone", "أُرسل طلب الصيانة إلى الإدارة.");
+    ping("dash");
+  }
+  function setTicket(id, status) {
+    const t = S.tickets.find((x) => x.id === id); if (!t || t.status === status) return;
+    const body = latin((S.treply[id] || "").trim());
+    tick(status === "done" ? 90 : 2);
+    t.replies.push({ status, body: body || (status === "done" ? "أُنجز العمل." : "بدأ العمل على طلبك."), at: clock(S.t) });
+    t.status = status; delete S.treply[id];
+    toast("dash", "أُرسل التحديث إلى أهل الوحدة، وسُجّل في سجل العمليات.");
+    if (t.mine) push(`طلب الصيانة (${TCATS[t.cat]}): ${TSTAT[status][0]}`, "tickets");
+  }
+  function rateTicket(id, n) {
+    const t = S.tickets.find((x) => x.id === id); if (!t || t.status !== "done") return;
+    t.rating = n; toast("phone", "شكرًا، وصل تقييمك إلى الإدارة."); ping("dash");
+  }
+  // fees: cash paid at the office, recorded by the administration, a digital receipt to the unit
+  function recordPayment(u) {
+    const f = S.fees.find((x) => x.u === u); if (!f || f.receipt) return;
+    tick(1);
+    f.receipt = Math.max(...S.fees.map((x) => x.receipt), ...S.feeHistory.map((x) => x.receipt)) + 1;
+    f.at = `اليوم ${clock(S.t)}`;
+    toast("dash", `سُجّلت دفعة نقدية للوحدة ${u}، وأُرسل وصل رقم ${f.receipt}.`);
+    if (f.me) push(`وصل رقمي: استلمت الإدارة ${money(f.due)} رسوم ${FEE_MONTH}. وصل رقم ${f.receipt}`, "fees");
+  }
+  const myWalkin = () => S.walkins.find((w) => w.unit === ME.unit && w.tour);
+  const myTicket = () => S.tickets.find((t) => t.mine && !t.old);
+  const myFee = () => S.fees.find((f) => f.me);
+  const eventPass = () => S.passes.find((p) => p.type === "event");
   const myListing = () => S.listings.find((l) => l.mine);
   const mySugg = () => S.suggs.find((s) => s.mine);
   function sortedSuggs() {
@@ -641,49 +771,81 @@ tr.new td { background: var(--successSoft); }
       target: () => "r-passes", done: () => false, auto: () => {} },
     { ch: 0, dev: "dash", text: "وسُجّل الدخول في لوحة الإدارة: الوقت والوحدة والموظف وزمن الاستجابة. افتح «سجل الدخول».",
       target: () => "d-nav-entries", done: () => S.dash.page === "entries", auto: () => { S.dash.page = "entries"; } },
-    { ch: 1, dev: "phone", text: "التوصيل بلا حقول مطلوبة إطلاقًا. اضغط «تسجيل توصيل» ثم اختر الشركة بلمسة واحدة.",
+    { ch: 0, dev: "gate", text: "وللمناسبات تصريح «مناسبة»: سجّلت أم أحمد استقبال 30 ضيفًا دون كتابة أسمائهم. يعدّ الموظف الضيوف عند الدخول. اضغط «+5» عند وصول سيارة ضيوف.",
+      target: () => "g-ev5-p5", done: () => eventPass() && eventPass().count > 0, auto: () => { S.gate.tab = "passes"; eventTap("p5", 5); } },
+    { ch: 1, dev: "gate", text: "وصل زائر لم يسجّله أحد. لا يدخل ولا يُردّ: اضغط «زائر بلا تصريح»، واكتب رقم الوحدة 12 من لوحة الأرقام، ثم «إرسال إلى أهل الوحدة».",
+      target: () => { const w = S.gate.walkin; if (!w) return "g-walkin"; if (w.unit !== "12") return "g-keypad"; return "g-wsend"; },
+      done: () => !!myWalkin(), auto: () => { openWalkin(); S.gate.walkin.unit = "12"; sendWalkin(); } },
+    { ch: 1, dev: "phone", text: "وصل أهلَ الوحدة إشعار فيه اسم الزائر وزرّان. أول جواب من أي فرد في الوحدة هو المعتمد. اضغط «السماح بالدخول».",
+      target: () => S.phone.screen !== "home" ? "r-back" : myWalkin() ? "r-wallow-" + myWalkin().id : "", done: () => myWalkin() && myWalkin().status !== "waiting", auto: () => { S.phone.screen = "home"; decideWalkin(myWalkin().id, true, "app"); } },
+    { ch: 1, dev: "gate", text: "تحوّل الطلب إلى الأخضر عند البوابة خلال ثوانٍ. اضغط «دخول». ولو رفض أهل الوحدة لامتلأت الشاشة بالأحمر مع صوت حتى يؤكّد الموظف. وإن لم يجب أحد، يتصل الموظف من الجهاز دون أن يرى الرقم.",
+      target: () => myWalkin() ? "g-wadmit-" + myWalkin().id : "", done: () => myWalkin() && myWalkin().status === "inside", auto: () => walkinAdmit(myWalkin().id) },
+    { ch: 2, dev: "phone", text: "التوصيل بلا حقول مطلوبة إطلاقًا. اضغط «تسجيل توصيل» ثم اختر الشركة بلمسة واحدة.",
       target: () => S.phone.screen === "delivery" ? "r-partner-s" : "r-delivery", done: () => S.passes.some((p) => p.type === "delivery" && p.mine), auto: () => createDelivery("s") },
-    { ch: 1, dev: "gate", text: "وصل المندوب إلى البوابة. اضغط «تسجيل توصيل»، واختر «سريع»، واكتب رقم الوحدة 12 من لوحة الأرقام، ثم «دخول». يطابق الجهاز التصريح تلقائيًا.",
+    { ch: 2, dev: "gate", text: "وصل المندوب إلى البوابة. اضغط «تسجيل توصيل»، واختر «سريع»، واكتب رقم الوحدة 12 من لوحة الأرقام، ثم «دخول». يطابق الجهاز التصريح تلقائيًا.",
       target: () => { const c = S.gate.courier; if (!c) return "g-courier"; if (!c.partner) return "g-partner-s"; if (c.unit !== "12") return "g-keypad"; return "g-courier-admit"; },
       done: () => S.couriersInside.some((c) => c.unit === "12"), auto: () => { S.gate.courier = { partner: "s", unit: "12" }; courierAdmit(); } },
-    { ch: 1, dev: "phone", text: "دخل المندوب ووصل الساكنَ إشعار. ويُغلق تصريح التوصيل تلقائيًا بعد 60 دقيقة من الدخول، ولكل وحدة حدّ للتصاريح المفتوحة.",
+    { ch: 2, dev: "phone", text: "دخل المندوب ووصل الساكنَ إشعار. ويُغلق تصريح التوصيل تلقائيًا بعد 60 دقيقة من الدخول، ولكل وحدة حدّ للتصاريح المفتوحة.",
       target: () => "r-passes", done: () => false, auto: () => {} },
-    { ch: 2, dev: "phone", text: "زر الطوارئ يعمل بالضغط المطوّل ثلاث ثوانٍ حتى لا يُضغط بالخطأ. اضغط مطوّلًا على «طوارئ» ثم اختر نوع الحالة.",
+    { ch: 3, dev: "phone", text: "زر الطوارئ يعمل بالضغط المطوّل ثلاث ثوانٍ حتى لا يُضغط بالخطأ. اضغط مطوّلًا على «طوارئ» ثم اختر نوع الحالة.",
       target: () => S.phone.screen === "sosType" ? "r-emg-fire" : "r-sos", done: () => !!S.emergency, auto: () => raise("fire") },
-    { ch: 2, dev: "gate", text: "تظهر الطوارئ على جهاز البوابة بملء الشاشة مع صوت، ولا تختفي حتى يضغط الموظف «تأكيد الاستلام».",
+    { ch: 3, dev: "gate", text: "تظهر الطوارئ على جهاز البوابة بملء الشاشة مع صوت، ولا تختفي حتى يضغط الموظف «تأكيد الاستلام».",
       target: () => "g-ack", done: () => S.emergency && S.emergency.status === "ack", auto: () => acknowledge() },
-    { ch: 2, dev: "dash", text: "وتتابع الإدارة البلاغ من لوحتها. وإن لم يُستلم البلاغ خلال دقيقة يُبلَّغ المشرف والإدارة تلقائيًا.",
+    { ch: 3, dev: "dash", text: "وتتابع الإدارة البلاغ من لوحتها. وإن لم يُستلم البلاغ خلال دقيقة يُبلَّغ المشرف والإدارة تلقائيًا.",
       target: () => "d-emg", done: () => false, auto: () => {} },
-    { ch: 3, dev: "phone", text: "طلب جماعي: يطلب الساكن الغاز من التطبيق. افتح «الطلبات»، واجعل الكمية 2، ثم «إرسال الطلب».",
-      target: () => S.phone.screen !== "orders" ? "r-orders" : (S.phone.qty.gas < 2 ? "r-plus-gas" : "r-place-gas"), done: () => S.mine.gas && S.mine.gas.status === "pending", auto: () => { S.phone.qty.gas = 2; placeOrder("gas", 2); } },
-    { ch: 3, dev: "dash", text: "تجمع الإدارة طلبات كل الوحدات في قائمة واحدة. افتح «الطلبات الجماعية» واضغط «إرسال إلى المورّد».",
+    { ch: 4, dev: "phone", text: "طلب صيانة: تعطّل شيء في البيت. افتح «الصيانة» ثم «طلب جديد».",
+      target: () => S.phone.screen === "tickets" ? "r-tnew" : S.phone.screen === "ticketNew" ? "" : S.phone.screen === "home" ? "r-tickets" : "r-back",
+      done: () => S.phone.screen === "ticketNew" || !!myTicket(), auto: () => openTicketNew() },
+    { ch: 4, dev: "phone", text: "اخترنا «سباكة»، وكتبنا الوصف، وأرفقنا صورة. اضغط «إرسال الطلب». الطلب خاص بالوحدة والإدارة، ولا يراه الجيران.",
+      target: () => "r-tsend", done: () => !!myTicket(), auto: () => { if (S.phone.screen !== "ticketNew") openTicketNew(); submitTicket(); } },
+    { ch: 4, dev: "dash", text: "يظهر الطلب في لوحة الإدارة مع الصورة. افتح «الصيانة». كتبنا ردًا فيه موعد الفني. اضغط «قيد التنفيذ».",
+      target: () => S.dash.page !== "tickets" ? "d-nav-tickets" : myTicket() ? "d-tprog-" + myTicket().id : "", done: () => myTicket() && myTicket().status !== "new",
+      auto: () => { S.dash.page = "tickets"; setTicket(myTicket().id, "in_progress"); } },
+    { ch: 4, dev: "dash", text: "أنهى الفني العمل. اضغط «منجز»، ويصل أهلَ الوحدة إشعار في كل مرة تتغيّر فيها الحالة.",
+      target: () => S.dash.page !== "tickets" ? "d-nav-tickets" : myTicket() ? "d-tdone-" + myTicket().id : "", done: () => myTicket() && myTicket().status === "done",
+      auto: () => { S.dash.page = "tickets"; setTicket(myTicket().id, "done"); } },
+    { ch: 4, dev: "phone", text: "يقيّم الساكن العمل بعد إنجازه، ويظهر التقييم للإدارة. اضغط النجمة الخامسة.",
+      target: () => S.phone.screen === "tickets" ? (myTicket() ? "r-rate-5-" + myTicket().id : "") : S.phone.push ? "r-push" : S.phone.screen === "home" ? "r-tickets" : "r-back",
+      done: () => myTicket() && myTicket().rating > 0, auto: () => { S.phone.push = null; S.phone.screen = "tickets"; rateTicket(myTicket().id, 5); } },
+    { ch: 5, dev: "phone", text: "طلب جماعي: يطلب الساكن الغاز من التطبيق. افتح «الطلبات»، واجعل الكمية 2، ثم «إرسال الطلب».",
+      target: () => S.phone.screen !== "orders" ? (S.phone.screen === "home" ? "r-orders" : "r-back") : (S.phone.qty.gas < 2 ? "r-plus-gas" : "r-place-gas"), done: () => S.mine.gas && S.mine.gas.status === "pending", auto: () => { S.phone.qty.gas = 2; placeOrder("gas", 2); } },
+    { ch: 5, dev: "dash", text: "تجمع الإدارة طلبات كل الوحدات في قائمة واحدة. افتح «الطلبات الجماعية» واضغط «إرسال إلى المورّد».",
       target: () => S.dash.page !== "orders" ? "d-nav-orders" : "d-send-gas", done: () => !!S.items[0].batch, auto: () => { S.dash.page = "orders"; sendBatch("gas"); } },
-    { ch: 3, dev: "dash", text: "هذه الرسالة التي تصل المورّد على واتساب: الوحدات والكميات فقط، دون أسماء السكان أو أرقام هواتفهم. عند وصول الطلب اضغط «تم التسليم».",
+    { ch: 5, dev: "dash", text: "هذه الرسالة التي تصل المورّد على واتساب: الوحدات والكميات فقط، دون أسماء السكان أو أرقام هواتفهم. عند وصول الطلب اضغط «تم التسليم».",
       target: () => "d-delivered-gas", done: () => S.items[0].batch && S.items[0].batch.delivered, auto: () => delivered("gas") },
-    { ch: 4, dev: "dash", text: "إعلان لكل السكان: افتح «الإعلانات». كتبنا إعلانًا عاجلًا، والعاجل يصل بإشعار مع صوت. اضغط «نشر الإعلان».",
-      target: () => S.dash.page !== "ann" ? "d-nav-ann" : "d-publish", done: () => S.anns.some((a) => a.fresh), auto: () => { S.dash.page = "ann"; if (!S.dash.draft.title) S.dash.draft = fresh().dash.draft; publish(); } },
-    { ch: 4, dev: "phone", text: "وصل الإعلان إلى هاتف الساكن. اضغط الإشعار لفتح «الإعلانات»، وفيها كل ما نشرته الإدارة.",
+    { ch: 6, dev: "dash", text: "إعلان لكل السكان: افتح «الإعلانات». كتبنا إعلانًا عاجلًا، والعاجل يصل بإشعار مع صوت. اضغط «نشر الإعلان».",
+      target: () => S.dash.page !== "ann" ? "d-nav-ann" : "d-publish", done: () => S.anns.some((a) => a.fresh), auto: () => { S.dash.page = "ann"; if (!S.dash.draft.title) { const u = uid; S.dash.draft = fresh().dash.draft; uid = u; } publish(); } },
+    { ch: 6, dev: "phone", text: "وصل الإعلان إلى هاتف الساكن. اضغط الإشعار لفتح «الإعلانات»، وفيها كل ما نشرته الإدارة.",
       target: () => S.phone.push ? "r-push" : S.phone.screen === "ann" ? "" : S.phone.screen === "home" ? "r-ann" : "r-back", done: () => false, auto: () => {} },
-    { ch: 5, dev: "phone", text: "سوق الجيران: يبيع السكان أغراضهم ويعرضون أعمالهم المنزلية وخدماتهم داخل المجمع فقط. افتح «السوق» ثم «إضافة إعلان».",
+    { ch: 7, dev: "phone", text: "رسوم الخدمة الشهرية (قريبًا): يرى المالك أو الساكن ما على وحدته هذا الشهر، وكل ما دفعه من قبل مع وصولاته. افتح «الرسوم».",
+      target: () => S.phone.screen === "fees" ? "" : S.phone.screen === "home" ? "r-fees" : "r-back", done: () => S.phone.screen === "fees" || !!myFee().receipt, auto: () => { S.phone.screen = "fees"; } },
+    { ch: 7, dev: "dash", text: "يدفع المالك نقدًا في مكتب الإدارة. افتح «الرسوم» في اللوحة، واضغط «تسجيل دفعة نقدية» أمام الوحدة 12.",
+      target: () => S.dash.page !== "fees" ? "d-nav-fees" : "d-pay-12", done: () => !!myFee().receipt, auto: () => { S.dash.page = "fees"; recordPayment("12"); } },
+    { ch: 7, dev: "phone", text: "وصل المالكَ وصلٌ رقمي في اللحظة نفسها، ويبقى في سجلّه، فلا خلاف على ما دُفع. والدفع الإلكتروني (زين كاش، FIB، كي كارد) في مرحلة لاحقة.",
+      target: () => S.phone.push ? "r-push" : S.phone.screen === "fees" ? "r-receipt" : S.phone.screen === "home" ? "r-fees" : "r-back", done: () => false, auto: () => { S.phone.push = null; S.phone.screen = "fees"; } },
+    { ch: 7, dev: "dash", text: "وترى الإدارة نسبة التحصيل والمتأخرات لكل وحدة دون دفاتر، بما فيها الوحدات التي يملكها مالك غير مقيم.",
+      target: () => S.dash.page !== "fees" ? "d-nav-fees" : "d-fee-kpis", done: () => false, auto: () => { S.dash.page = "fees"; } },
+    { ch: 8, dev: "phone", text: "سوق الجيران: يبيع السكان أغراضهم ويعرضون أعمالهم المنزلية وخدماتهم داخل المجمع فقط. افتح «السوق» ثم «إضافة إعلان».",
       target: () => S.phone.screen === "market" ? "r-mnew" : S.phone.screen === "marketNew" ? "" : S.phone.screen === "home" ? "r-market" : "r-back", done: () => S.phone.screen === "marketNew" || !!myListing(), auto: () => { S.phone.screen = "marketNew"; } },
-    { ch: 5, dev: "phone", text: "كتبنا إعلانًا تجريبيًا، والسعر والصور اختيارية. اضغط «نشر الإعلان». يبقى الإعلان 30 يومًا ويُجدَّد، ولكل وحدة 3 إعلانات في الأسبوع.",
+    { ch: 8, dev: "phone", text: "كتبنا إعلانًا تجريبيًا، والسعر والصور اختيارية. اضغط «نشر الإعلان». يبقى الإعلان 30 يومًا ويُجدَّد، ولكل وحدة 3 إعلانات في الأسبوع.",
       target: () => "r-mpub", done: () => !!myListing(), auto: () => { if (!S.mdraft.title) S.mdraft = MARKET_DRAFT(); publishListing(); } },
-    { ch: 5, dev: "phone", text: "رقم البائع لا يظهر في أي قائمة. يُطلب لإعلان واحد فقط حين يضغط الجار «اتصال» أو «واتساب». جرّب «اتصال» على إعلان أحد الجيران.",
+    { ch: 8, dev: "phone", text: "رقم البائع لا يظهر في أي قائمة. يُطلب لإعلان واحد فقط حين يضغط الجار «اتصال» أو «واتساب». جرّب «اتصال» على إعلان أحد الجيران.",
       target: () => "r-call-m1", done: () => false, auto: () => {} },
-    { ch: 5, dev: "dash", text: "تراجع الإدارة الإعلانات من لوحتها، والمبلَّغ عنها أولًا، ويمكنها إخفاء أي إعلان. افتح «السوق».",
+    { ch: 8, dev: "dash", text: "تراجع الإدارة الإعلانات من لوحتها، والمبلَّغ عنها أولًا، ويمكنها إخفاء أي إعلان. افتح «السوق».",
       target: () => "d-nav-market", done: () => S.dash.page === "market", auto: () => { S.dash.page = "market"; } },
-    { ch: 6, dev: "phone", text: "الاقتراحات: يقترح الساكن تحسينًا للمجمع، ويستطيع إخفاء اسمه عن السكان. افتح «الاقتراحات» ثم «اقتراح جديد».",
+    { ch: 9, dev: "phone", text: "الاقتراحات: يقترح الساكن تحسينًا للمجمع، ويستطيع إخفاء اسمه عن السكان. افتح «الاقتراحات» ثم «اقتراح جديد».",
       target: () => S.phone.screen === "sugg" ? "r-snew" : S.phone.screen === "suggNew" ? "" : S.phone.screen === "home" ? "r-sugg" : "r-back", done: () => S.phone.screen === "suggNew" || !!mySugg(), auto: () => { S.phone.screen = "suggNew"; } },
-    { ch: 6, dev: "phone", text: "اخترنا «دون اسمي»: لن يظهر الاسم لأي ساكن، والإدارة وحدها تعرفه. اضغط «نشر الاقتراح».",
+    { ch: 9, dev: "phone", text: "اخترنا «دون اسمي»: لن يظهر الاسم لأي ساكن، والإدارة وحدها تعرفه. اضغط «نشر الاقتراح».",
       target: () => "r-spub", done: () => !!mySugg(), auto: () => { if (!S.sdraft.title) S.sdraft = SUGG_DRAFT(); publishSugg(); } },
-    { ch: 6, dev: "phone", text: "يؤيّد الجيران الاقتراحات بصوت واحد لكل شخص، ويمكن سحبه. لا يعرف أحد من أيّد، ولا حتى الإدارة. اضغط «أؤيّد» على اقتراح المطبات.",
+    { ch: 9, dev: "phone", text: "يؤيّد الجيران الاقتراحات بصوت واحد لكل شخص، ويمكن سحبه. لا يعرف أحد من أيّد، ولا حتى الإدارة. اضغط «أؤيّد» على اقتراح المطبات.",
       target: () => S.phone.screen !== "sugg" ? (S.phone.screen === "home" ? "r-sugg" : "r-back") : "r-vote-s1", done: () => S.suggs.find((s) => s.id === "s1").my, auto: () => { S.phone.screen = "sugg"; const s = S.suggs.find((x) => x.id === "s1"); if (!s.my) vote("s1"); } },
-    { ch: 6, dev: "dash", text: "ترى الإدارة اسم صاحب الاقتراح ووحدته مع ملاحظة أنه طلب إخفاءه، وما ينتظر الرد أكثر من 7 أيام يظهر أولًا. افتح «الاقتراحات» وأرسل الرد بحالة «قيد التنفيذ».",
+    { ch: 9, dev: "dash", text: "ترى الإدارة اسم صاحب الاقتراح ووحدته مع ملاحظة أنه طلب إخفاءه، وما ينتظر الرد أكثر من 7 أيام يظهر أولًا. افتح «الاقتراحات» وأرسل الرد بحالة «قيد التنفيذ».",
       target: () => S.dash.page !== "sugg" ? "d-nav-sugg" : mySugg() ? "d-reply-" + mySugg().id : "", done: () => mySugg() && mySugg().replies.length > 0, auto: () => { S.dash.page = "sugg"; const s = mySugg(); S.rdraft[s.id] = { status: "in_progress", body: REPLY_DRAFT }; reply(s.id); } },
-    { ch: 6, dev: "phone", text: "وصل الرد إلى صاحب الاقتراح، ويراه كل السكان مع الحالة الجديدة.",
+    { ch: 9, dev: "phone", text: "وصل الرد إلى صاحب الاقتراح، ويراه كل السكان مع الحالة الجديدة.",
       target: () => S.phone.push ? "r-push" : "", done: () => false, auto: () => {} },
   ];
-  const CHAPTERS = ["زائر", "توصيل", "طوارئ", "طلب جماعي", "إعلان", "السوق", "الاقتراحات"];
+  const CHAPTERS = ["زائر", "زائر بلا تصريح", "توصيل", "طوارئ", "طلب صيانة", "طلب جماعي", "إعلان", "الرسوم", "السوق", "الاقتراحات"];
+  const SOON_CH = 7;
   const DEVNAME = { phone: "هاتف الساكن", gate: "جهاز البوابة", dash: "لوحة الإدارة" };
 
   function openVisitor() {
@@ -691,6 +853,8 @@ tr.new td { background: var(--successSoft); }
     if (UI.mode === "tour") S.phone.form = { name: "أحمد علي", car: CARS[1], people: 2 };
   }
   function tourCreate() { if (createPass()) S.passes[0].tour = true; }
+  function openWalkin() { S.gate.courier = null; S.gate.walkin = { name: UI.mode === "tour" ? "حسين جاسم" : "", unit: "" }; }
+  function openTicketNew() { S.phone.screen = "ticketNew"; if (UI.mode === "tour" && !S.tdraft.body) S.tdraft = TICKET_DRAFT(); }
 
   function afterAction() {
     if (UI.mode === "tour" && UI.step < STEPS.length) {
@@ -717,6 +881,7 @@ tr.new td { background: var(--successSoft); }
     return `<div class="statusbar${brand ? " on-brand" : ""}"><span class="num">${clock(S.t)}</span><span>${icon("signal")}${icon("wifi")}${icon("battery-full")}</span></div>`;
   }
   function passBadge(p) {
+    if (p.type === "event" && p.status === "active") return `<span class="badge ${p.count > p.people ? "b-warn" : p.count ? "b-ok" : "b-warn"}">${p.count ? `دخل ${p.count} من ${p.people}` : `بانتظار ${p.people} ضيفًا`}</span>`;
     if (p.status === "inside") return `<span class="badge b-ok">دخل الساعة ${clock(p.enteredAt)}</span>`;
     if (p.status === "exited") return `<span class="badge b-mute">خرج</span>`;
     if (p.status === "cancelled") return `<span class="badge b-mute">ملغى</span>`;
@@ -731,6 +896,8 @@ tr.new td { background: var(--successSoft); }
         <div class="card visit-card"><h4>هل لديك زائر؟</h4><p>سجّله ليصل التصريح إلى البوابة فورًا.</p>
           <button class="pbtn" data-act="r-visitor" data-tour="r-visitor">${icon("user-plus")}تسجيل زائر</button></div>
         <button class="pbtn out" data-act="r-delivery" data-tour="r-delivery">${icon("package")}تسجيل توصيل</button>
+        ${S.walkins.filter((w) => w.unit === ME.unit && w.status === "waiting").map((w) => `<div class="wk wait">${icon("door-open")}<b>زائر عند البوابة: ${esc(w.name)}</b><span>لم يسجّله أحد. هل تسمح بدخوله؟</span>
+          <div class="mrow"><button class="pbtn ok" data-act="r-wallow" data-id="${w.id}" data-tour="r-wallow-${w.id}">السماح بالدخول</button><button class="pbtn out" data-act="r-wreject" data-id="${w.id}">رفض</button></div></div>`).join("")}
         ${e ? `<div class="status-card ${e.status === "ack" ? "sc-ok" : "sc-danger"}">${icon(e.status === "ack" ? "shield-check" : "siren")}<span>${e.status === "ack" ? "تسلّم الأمن البلاغ." : "أُرسل البلاغ إلى الأمن."} ${EMG[e.type]}، الساعة ${clock(e.at)}</span></div>` : ""}
         <h4 class="sec-title">التصاريح</h4>
         <div class="rows" data-tour="r-passes">${mine.length ? mine.map((p) => `
@@ -741,6 +908,8 @@ tr.new td { background: var(--successSoft); }
           <button class="tile t-warn" data-act="r-orders" data-tour="r-orders">${icon("shopping-basket")}الطلبات</button>
           <button class="tile t-brand" data-act="r-market" data-tour="r-market">${icon("store")}السوق</button>
           <button class="tile t-ok" data-act="r-sugg" data-tour="r-sugg">${icon("lightbulb")}الاقتراحات</button>
+          <button class="tile t-mute" data-act="r-tickets" data-tour="r-tickets">${icon("wrench")}الصيانة</button>
+          <button class="tile t-mute" data-act="r-fees" data-tour="r-fees">${icon("wallet")}<span>الرسوم <span class="soon">قريبًا</span></span></button>
         </div>
         <button class="sos" data-hold="sos" data-tour="r-sos"><span class="fill"></span>${icon("siren")}<span>طوارئ</span></button>
         <p class="hint">اضغط مطولًا ثلاث ثوانٍ لإرسال بلاغ طوارئ</p>
@@ -837,10 +1006,53 @@ tr.new td { background: var(--successSoft); }
       <button class="pbtn" data-act="r-spub" data-tour="r-spub">${icon("send")}نشر الاقتراح</button>
     </div></div>`;
   }
+  function stars(t, act) {
+    return `<div class="stars" role="group" aria-label="التقييم">${[1, 2, 3, 4, 5].map((n) => act
+      ? `<button class="${n <= t.rating ? "on" : ""}" data-act="r-rate" data-id="${t.id}" data-v="${n}" data-tour="r-rate-${n}-${t.id}" aria-label="${n} من 5">${icon("star")}</button>`
+      : `<span class="${n <= t.rating ? "on" : ""}" style="color:var(--warning)">${icon("star")}</span>`).join("")}</div>`;
+  }
+  function phoneTickets() {
+    const mine = S.tickets.filter((t) => t.unit === ME.unit);
+    return `${subHead("الصيانة")}<div class="scroll"><div class="r-body">
+      <p class="hint" style="text-align:start;margin:0">طلبات وحدتك إلى إدارة المجمع. لا يراها الجيران.</p>
+      <button class="pbtn" data-act="r-tnew" data-tour="r-tnew">${icon("plus")}طلب جديد</button>
+      ${mine.map((t) => `<div class="card"${t.fresh ? ' style="outline:2px solid var(--success)"' : ""}>
+        <div class="mrow"><span class="badge b-brand">${TCATS[t.cat]}</span><span class="badge ${TSTAT[t.status][1]}">${TSTAT[t.status][0]}</span></div>
+        <b>${esc(t.body)}</b>${t.photo ? `<span class="thumb">${icon("image")}</span>` : ""}
+        ${t.replies.map((r) => `<div class="reply"><small>ردّ الإدارة · ${TSTAT[r.status][0]} · ${esc(r.at)}</small><p>${esc(r.body)}</p></div>`).join("")}
+        ${t.status === "done" ? `<div class="reply"><small>${t.rating ? "تقييمك" : "قيّم العمل"}</small>${stars(t, !t.rating)}</div>` : ""}
+      </div>`).join("")}
+    </div></div>`;
+  }
+  function phoneTicketNew() {
+    const d = S.tdraft;
+    return `${subHead("طلب صيانة")}<div class="scroll"><div class="r-body">
+      <div class="card"><div class="field"><label>النوع</label><div class="opts">${Object.entries(TCATS).map(([k, v]) => `<button class="opt" data-act="r-tcat" data-v="${k}" aria-pressed="${d.cat === k}">${v}</button>`).join("")}</div></div>
+        <div class="field"><label for="t-body">وصف المشكلة</label><textarea class="input area" id="t-body" data-in="t-body">${esc(d.body)}</textarea></div>
+        <div class="mrow">${d.photo ? `<span class="thumb">${icon("image")}</span>` : ""}<button class="opt" data-act="r-tphoto">${icon("camera")} ${d.photo ? "إزالة الصورة" : "إرفاق صورة"}</button></div>
+        <p class="hint" style="text-align:start;margin:0">حتى 3 صور. تصل الردود وتغيّر الحالة بإشعار.</p></div>
+      <button class="pbtn" data-act="r-tsend" data-tour="r-tsend">${icon("send")}إرسال الطلب</button>
+    </div></div>`;
+  }
+  function phoneFees() {
+    const f = myFee();
+    return `${subHead(`الرسوم <span class="soon">قريبًا</span>`)}<div class="scroll"><div class="r-body">
+      <div class="card"><small style="color:var(--muted)">رسوم الخدمة · ${FEE_MONTH} · الوحدة ${ME.unit}</small>
+        <span class="fee-big num">${money(f.due)}</span>
+        ${f.receipt ? `<span class="badge b-ok" style="justify-self:start">مدفوعة</span>
+          <div class="status-card sc-ok" data-tour="r-receipt">${icon("receipt")}<span>وصل رقم <span class="num">${f.receipt}</span><br><small style="font-weight:500">دُفعت نقدًا في مكتب الإدارة · ${esc(f.at)} · استلمها: إدارة مجمع ${COMPOUND}</small></span></div>`
+          : `<span class="badge b-warn" style="justify-self:start">غير مدفوعة</span><p class="hint" style="text-align:start;margin:0">ادفع نقدًا في مكتب إدارة المجمع، ويصلك وصل رقمي هنا فورًا.</p>`}
+      </div>
+      <button class="pbtn out" disabled>${icon("smartphone")}الدفع الإلكتروني: زين كاش، FIB، كي كارد <span class="soon">لاحقًا</span></button>
+      <h4 class="sec-title">السجل</h4>
+      <div class="rows">${S.feeHistory.map((h) => `<div class="row"><div class="grow"><b>${h.month}</b><small>وصل رقم <span class="num">${h.receipt}</span> · ${h.at}</small></div><span class="badge b-ok num">${money(h.amount)}</span></div>`).join("")}</div>
+    </div></div>`;
+  }
   function phone() {
     const s = S.phone.screen;
     let html = s === "visitor" ? phoneVisitor() : s === "delivery" ? phoneDelivery() : s === "orders" ? phoneOrders() : s === "ann" ? phoneAnn()
-      : s === "market" ? phoneMarket() : s === "marketNew" ? phoneMarketNew() : s === "sugg" ? phoneSugg() : s === "suggNew" ? phoneSuggNew() : phoneHome();
+      : s === "market" ? phoneMarket() : s === "marketNew" ? phoneMarketNew() : s === "sugg" ? phoneSugg() : s === "suggNew" ? phoneSuggNew()
+      : s === "tickets" ? phoneTickets() : s === "ticketNew" ? phoneTicketNew() : s === "fees" ? phoneFees() : phoneHome();
     if (s === "sosType") html = phoneHome() + `<div class="sheet"><div class="panel"><h4>ما نوع الحالة؟</h4><div class="types">${Object.entries(EMG).map(([k, v]) => `<button data-act="r-emg" data-v="${k}" data-tour="r-emg-${k}">${v}</button>`).join("")}</div><button class="pbtn out" data-act="r-home">إلغاء</button></div></div>`;
     if (S.phone.push) html += `<button class="push" data-act="r-push" data-tour="r-push"><span class="appicon">${icon("bell")}</span><span><b>${COMPOUND} · الآن</b><span>${esc(S.phone.push.text)}</span></span></button>`;
     if (S.phone.toast) html += `<div class="toast">${esc(S.phone.toast)}</div>`;
@@ -855,7 +1067,7 @@ tr.new td { background: var(--successSoft); }
   function gate() {
     const g = S.gate;
     const active = S.passes.filter((p) => p.status === "active");
-    const inside = S.passes.filter((p) => p.status === "inside" && p.type !== "delivery");
+    const inside = S.passes.filter((p) => (p.status === "inside" && p.type !== "delivery") || (p.type === "event" && p.count > 0));
     let body;
     if (g.courier) {
       const c = g.courier;
@@ -870,24 +1082,39 @@ tr.new td { background: var(--successSoft); }
         ${c.partner && c.unit ? (matched ? `<div class="match yes">${icon("check-circle-2")}يوجد تصريح توصيل لهذه الوحدة</div>` : `<div class="match no">${icon("info")}لا يوجد تصريح توصيل لهذه الوحدة</div>`) : ""}
         ${matched ? `<button class="gbtn ok" style="width:100%" data-act="g-courier-admit" data-tour="g-courier-admit">${icon("log-in")}دخول</button>` : c.partner && c.unit ? `<button class="gbtn dark" data-act="g-courier-hold">إبلاغ أهل الوحدة بالاستلام من البوابة</button>` : ""}
       </div>`;
+    } else if (g.walkin) {
+      const w = g.walkin;
+      body = `<div class="g-body">
+        <div style="display:flex;justify-content:space-between;align-items:center"><h3 style="font-size:20px">زائر بلا تصريح</h3><button class="gbtn out" data-act="g-walkin-close">العودة إلى القائمة</button></div>
+        <label class="g-search">${icon("user")}<input id="w-name" data-in="w-name" value="${esc(w.name)}" placeholder="اسم الزائر" autocomplete="off"></label>
+        <b>رقم الوحدة</b>
+        <div class="unit-display num" aria-live="polite">${w.unit || "—"}</div>
+        <div class="keypad" data-tour="g-keypad">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => `<button data-act="g-key" data-v="${n}">${n}</button>`).join("")}<button data-act="g-key" data-v="del" aria-label="حذف رقم">${icon("delete")}</button><button data-act="g-key" data-v="0">0</button><button data-act="g-key" data-v="clr">مسح</button></div>
+        <button class="gbtn dark" data-act="g-wsend" data-tour="g-wsend">${icon("send")}إرسال إلى أهل الوحدة</button>
+      </div>`;
     } else {
       const list = g.tab === "passes" ? active.filter(gateMatches) : [];
+      const wk = g.tab === "passes" ? S.walkins.filter((w) => w.status === "waiting" || w.status === "allowed") : [];
       body = `<div class="g-body">
         <label class="g-search">${icon("search")}<input id="g-search" data-in="g-search" value="${esc(g.search)}" placeholder="ابحث بالاسم أو رقم الوحدة أو المركبة" autocomplete="off"></label>
-        <button class="gbtn info" data-act="g-courier" data-tour="g-courier">${icon("package")}تسجيل توصيل</button>
+        <div class="g-actions"><button class="gbtn info" data-act="g-courier" data-tour="g-courier">${icon("package")}تسجيل توصيل</button><button class="gbtn dark" data-act="g-walkin" data-tour="g-walkin">${icon("door-open")}زائر بلا تصريح</button></div>
         <div class="g-tabs" role="tablist">
           <button role="tab" data-act="g-tab" data-v="passes" aria-selected="${g.tab === "passes"}">التصاريح <span class="num">${active.length}</span></button>
           <button role="tab" data-act="g-tab" data-v="inside" aria-selected="${g.tab === "inside"}">بالداخل الآن <span class="num">${inside.length}</span></button>
           <button role="tab" data-act="g-tab" data-v="couriers" aria-selected="${g.tab === "couriers"}">المندوبون <span class="num">${S.couriersInside.length}</span></button>
         </div>
+        ${wk.map((w) => w.status === "waiting" ? `<div class="wk wait"><b>${esc(w.name)} — الوحدة ${w.unit}</b><span>بانتظار رد أهل الوحدة منذ ${clock(w.at)}. أول جواب هو المعتمد.</span>
+            <div class="mrow"><button class="gbtn out" data-act="g-wcall">${icon("phone")}اتصال</button><button class="gbtn ok" data-act="g-wcallok" data-id="${w.id}">تمت الموافقة بالاتصال</button><button class="gbtn out" data-act="g-wreject" data-id="${w.id}">رفض</button></div></div>`
+          : `<div class="wk ok"><b>${esc(w.name)} — الوحدة ${w.unit}</b><span>${w.by === "call" ? "وافق أهل الوحدة بالاتصال." : "سمح أهل الوحدة بالدخول من التطبيق."}</span>
+            <button class="gbtn ok" style="width:100%" data-act="g-wadmit" data-id="${w.id}" data-tour="g-wadmit-${w.id}">${icon("log-in")}دخول</button></div>`).join("")}
         ${g.tab === "passes" ? (list.length ? list.map((p) => `
           <div class="g-card"${p.fresh ? ' style="outline:2px solid var(--success)"' : ""}><div class="grow"><b>${esc(p.name)}</b>
             <span class="unitbig">الوحدة ${p.unit}، المبنى ${p.b} · <span class="badge ${p.type === "delivery" ? "b-info" : "b-brand"}">${TYPES[p.type]}</span></span>
             <small>${esc(p.window)}${p.car ? " · " + esc(p.car) : ""}${p.people > 1 ? ` · ${p.people} أشخاص` : ""}</small></div>
-            ${p.type === "delivery" ? `<span class="badge b-info">بانتظار المندوب</span>` : `<button class="gbtn ok" data-act="g-admit" data-id="${p.id}" data-tour="g-admit-${p.id}">${icon("log-in")}دخول</button>`}</div>`).join("") : `<div class="g-empty">${g.search ? "لا يوجد تصريح يطابق البحث." : "لا توجد تصاريح فعّالة الآن."}</div>`) : ""}
+            ${p.type === "delivery" ? `<span class="badge b-info">بانتظار المندوب</span>` : p.type === "event" ? `<div style="display:grid;gap:6px;justify-items:center"><span class="ev-count num${p.count > p.people ? " over" : ""}">${p.count} / ${p.people}</span><div class="mrow"><button class="gbtn out" style="min-width:64px" data-act="g-ev" data-id="${p.id}" data-v="1">+1</button><button class="gbtn ok" style="min-width:64px" data-act="g-ev" data-id="${p.id}" data-v="5" data-tour="g-ev5-${p.id}">+5</button></div></div>` : `<button class="gbtn ok" data-act="g-admit" data-id="${p.id}" data-tour="g-admit-${p.id}">${icon("log-in")}دخول</button>`}</div>`).join("") : `<div class="g-empty">${g.search ? "لا يوجد تصريح يطابق البحث." : "لا توجد تصاريح فعّالة الآن."}</div>`) : ""}
         ${g.tab === "inside" ? (inside.length ? inside.map((p) => `
-          <div class="g-card"><div class="grow"><b>${esc(p.name)}</b><span class="unitbig">الوحدة ${p.unit}، المبنى ${p.b}</span><small>دخل ${clock(p.enteredAt)}</small></div>
-          <button class="gbtn out" data-act="g-exit" data-id="${p.id}">${icon("log-out")}تسجيل الخروج</button></div>`).join("") : `<div class="g-empty">لا أحد في الداخل الآن.</div>`) : ""}
+          <div class="g-card"><div class="grow"><b>${esc(p.name)}</b><span class="unitbig">الوحدة ${p.unit}، المبنى ${p.b}${p.type === "walkin" || p.type === "event" ? ` · <span class="badge b-brand">${TYPES[p.type]}</span>` : ""}</span><small>${p.type === "event" ? `${p.count} ضيفًا من ${p.people} · يُغلق مع نهاية الموعد` : `دخل ${clock(p.enteredAt)}`}</small></div>
+          ${p.type === "event" ? "" : `<button class="gbtn out" data-act="g-exit" data-id="${p.id}">${icon("log-out")}تسجيل الخروج</button>`}</div>`).join("") : `<div class="g-empty">لا أحد في الداخل الآن.</div>`) : ""}
         ${g.tab === "couriers" ? (S.couriersInside.length ? S.couriersInside.map((c) => `
           <div class="g-card"><div class="grow"><b>مندوب ${esc(c.name)}</b><span class="unitbig">الوحدة ${c.unit}</span><small>وصل ${clock(c.at)} · يُغلق تلقائيًا ${clock(c.at + 60)}</small></div><span class="badge b-info">بالداخل</span></div>`).join("") : `<div class="g-empty">لا يوجد مندوبون في الداخل.</div>`) : ""}
       </div>`;
@@ -904,7 +1131,7 @@ tr.new td { background: var(--successSoft); }
   // ---------- render: dashboard ----------
   function dash() {
     const d = S.dash;
-    const nav = [["overview", "layout-dashboard", "نظرة عامة"], ["entries", "list", "سجل الدخول"], ["orders", "shopping-basket", "الطلبات الجماعية"], ["ann", "megaphone", "الإعلانات"], ["market", "store", "السوق"], ["sugg", "lightbulb", "الاقتراحات"]];
+    const nav = [["overview", "layout-dashboard", "نظرة عامة"], ["entries", "list", "سجل الدخول"], ["orders", "shopping-basket", "الطلبات الجماعية"], ["ann", "megaphone", "الإعلانات"], ["tickets", "wrench", "الصيانة"], ["fees", "wallet", "الرسوم"], ["market", "store", "السوق"], ["sugg", "lightbulb", "الاقتراحات"], ["setup", "upload", "إعداد المجمع"]];
     const e = S.emergency;
     const emg = e && e.status !== "closed" ? `<div class="emg ${e.status}" data-tour="d-emg"><span>${e.status === "raised" ? `بلاغ طوارئ: ${EMG[e.type]} — الوحدة ${ME.unit}` : `بلاغ طوارئ قيد المعالجة: ${EMG[e.type]} — الوحدة ${ME.unit}`} · منذ ${clock(e.at)}</span>
       <span style="display:flex;gap:8px;align-items:center"><span class="badge ${e.status === "raised" ? "b-danger" : "b-ok"}">${e.status === "raised" ? "لم يُستلم بعد" : "تم الاستلام"}</span>${e.status === "ack" ? `<button data-act="d-emg-close">إغلاق</button>` : ""}</span></div>` : "";
@@ -957,6 +1184,44 @@ tr.new td { background: var(--successSoft); }
             <textarea class="input area" data-in="r-body" data-id="${s.id}" id="rb-${s.id}" placeholder="نص الرد">${esc(r.body)}</textarea>
             <div class="mrow"><button class="dbtn" data-act="d-reply" data-id="${s.id}" data-tour="d-reply-${s.id}">${icon("send")}إرسال الرد</button><button class="dbtn out" data-act="d-shide" data-id="${s.id}">${s.hidden ? "إعادة الاقتراح" : "إخفاء الاقتراح"}</button></div></div>
         </div>`; }).join("")}`;
+    } else if (d.page === "tickets") {
+      const order = { new: 0, in_progress: 1, done: 2 };
+      const list = S.tickets.slice().sort((a, b) => order[a.status] - order[b.status] || a.days - b.days);
+      const rated = S.tickets.filter((t) => t.rating);
+      main = `<h3>الصيانة</h3><p class="d-desc">طلبات الوحدات، والجديد أولًا. كل رد وتغيير حالة يصل إلى أهل الوحدة بإشعار ويُسجَّل في سجل العمليات.</p>
+        <div class="kpis"><div class="kpi"><b class="num">${S.tickets.filter((t) => t.status === "new").length}</b><small>جديد</small></div><div class="kpi"><b class="num">${S.tickets.filter((t) => t.status === "in_progress").length}</b><small>قيد التنفيذ</small></div><div class="kpi"><b class="num">${S.tickets.filter((t) => t.status === "done").length}</b><small>منجز هذا الشهر</small></div><div class="kpi"><b class="num">${rated.length ? (rated.reduce((n, t) => n + t.rating, 0) / rated.length).toFixed(1) : "—"}</b><small>متوسط التقييم من 5</small></div></div>
+        ${list.map((t) => `<div class="item-card"${t.fresh ? ' style="outline:2px solid var(--success)"' : ""}>
+          <header><div><h4>${TCATS[t.cat]} — الوحدة <span class="num">${t.unit}</span>، المبنى ${t.b}</h4><small>${esc(t.name)}</small></div><span class="badge ${TSTAT[t.status][1]}">${TSTAT[t.status][0]}</span></header>
+          <div class="mrow"><span>${esc(t.body)}</span>${t.photo ? `<span class="thumb">${icon("image")}</span>` : ""}</div>
+          ${t.replies.map((r) => `<div class="reply"><small>${TSTAT[r.status][0]} · ${esc(r.at)}</small><p>${esc(r.body)}</p></div>`).join("")}
+          ${t.rating ? `<div class="mrow"><small>تقييم الساكن:</small>${stars(t, false)}</div>` : ""}
+          ${t.status === "done" ? "" : `<div class="reply"><textarea class="input area" data-in="t-reply" data-id="${t.id}" id="tr-${t.id}" placeholder="نص الرد (اختياري)">${esc(S.treply[t.id] || "")}</textarea>
+            <div class="mrow">${t.status === "new" ? `<button class="dbtn" data-act="d-tset" data-id="${t.id}" data-v="in_progress" data-tour="d-tprog-${t.id}">${icon("hammer")}قيد التنفيذ</button>` : ""}<button class="dbtn ok" data-act="d-tset" data-id="${t.id}" data-v="done" data-tour="d-tdone-${t.id}">${icon("check")}منجز</button></div></div>`}
+        </div>`).join("")}`;
+    } else if (d.page === "fees") {
+      const paid = S.fees.filter((f) => f.receipt);
+      const collected = paid.reduce((n, f) => n + f.due, 0);
+      const owed = S.fees.filter((f) => !f.receipt).reduce((n, f) => n + f.due, 0);
+      const late = S.fees.filter((f) => !f.receipt && f.due > FEE);
+      main = `<h3>الرسوم <span class="soon">قريبًا</span></h3><p class="d-desc">${FEE_MONTH} · ${money(FEE)} للوحدة شهريًا. يدفع المالك نقدًا في المكتب، وتسجّل الإدارة الدفعة فيصله وصل رقمي.</p>
+        <div class="kpis" data-tour="d-fee-kpis"><div class="kpi"><b class="num">${Math.round((paid.length / S.fees.length) * 100)}%</b><small>نسبة التحصيل (${paid.length} من ${S.fees.length})</small></div><div class="kpi"><b class="num">${collected.toLocaleString("en-US")}</b><small>المحصّل هذا الشهر (دينار)</small></div><div class="kpi"><b class="num">${owed.toLocaleString("en-US")}</b><small>غير مدفوع (دينار)</small></div><div class="kpi"><b class="num">${late.length}</b><small>وحدات متأخرة أكثر من شهر</small></div></div>
+        <div class="table-card"><table><thead><tr><th>المبنى</th><th>الوحدة</th><th>المالك</th><th>المستحق</th><th>الحالة</th><th></th></tr></thead><tbody>
+        ${S.fees.map((f) => `<tr class="${f.me && f.receipt ? "new" : ""}"><td>${f.b}</td><td class="num">${f.u}</td><td>${esc(f.owner)}</td><td class="num">${f.due.toLocaleString("en-US")}</td>
+          <td>${f.receipt ? `<span class="badge b-ok">مدفوعة · وصل <span class="num">${f.receipt}</span></span>` : f.due > FEE ? `<span class="badge b-danger">متأخرة ${f.due / FEE} أشهر</span>` : `<span class="badge b-warn">غير مدفوعة</span>`}</td>
+          <td>${f.receipt ? `<small>${esc(f.at)}</small>` : `<button class="dbtn" style="min-height:36px" data-act="d-pay" data-v="${f.u}" data-tour="d-pay-${f.u}">${icon("banknote")}تسجيل دفعة نقدية</button>`}</td></tr>`).join("")}
+        </tbody></table></div>
+        <p class="d-desc" style="margin:0">ميزة قادمة، وهذا شكلها المخطط: رسوم لكل وحدة أو لكل نوع وحدة، وتصدير Excel، وتقرير شهري للمستثمر. الدفع الإلكتروني (زين كاش، FIB، كي كارد) في مرحلة لاحقة.</p>`;
+    } else if (d.page === "setup") {
+      const st = S.setup;
+      main = `<h3>إعداد المجمع</h3><p class="d-desc">من ملف Excel إلى بطاقات تفعيل مطبوعة في يوم واحد. الملف يخص هذا المجمع وحده، ولا يحتوي عمود المجمع.</p>
+        <div class="item-card"><header><div><h4>${icon("file-spreadsheet")} residents.xlsx</h4><small>فُحص الملف قبل الاستيراد، ولم يُحفظ شيء بعد</small></div>${st.imported ? `<span class="badge b-ok">تم الاستيراد</span>` : `<span class="badge b-info">معاينة</span>`}</header>
+          <div class="kpis"><div class="kpi"><b class="num">248</b><small>وحدة</small></div><div class="kpi"><b class="num">312</b><small>ساكنًا</small></div><div class="kpi"><b class="num">3</b><small>صفوف فيها أخطاء</small></div></div>
+          <div class="table-card" style="box-shadow:none;border:1px solid var(--line)"><table><thead><tr><th>الصف</th><th>المشكلة</th></tr></thead><tbody>
+            <tr><td class="num">14</td><td>رقم الهاتف ناقص</td></tr><tr><td class="num">87</td><td>الوحدة 3 في المبنى أ مكررة</td></tr><tr><td class="num">203</td><td>المبنى «د» غير موجود</td></tr></tbody></table></div>
+          <div class="mrow"><button class="dbtn" data-act="d-import" ${st.imported ? "disabled" : ""}>${icon("upload")}استيراد الصفوف الصحيحة</button><button class="dbtn out" data-act="d-sample">${icon("download")}تنزيل نموذج الملف</button></div></div>
+        <div class="item-card"><header><h4>بطاقات التفعيل</h4><small>بطاقة لكل ساكن، فيها رمز لمرة واحدة</small></header>
+          <div class="idcard"><b>مجمع ${COMPOUND} · بطاقة تفعيل</b><span>مريم التجريبية — الوحدة 7، المبنى أ</span><span class="num" dir="ltr" style="text-align:start">0780 ••• ••33</span><span class="code">K7M-4QX</span><small style="color:var(--muted)">حمّل تطبيق بوابة، وأدخل الرمز، ثم اختر رمزًا سريًا من 6 أرقام.</small></div>
+          <div class="mrow"><button class="dbtn" data-act="d-cards">${icon("printer")}طباعة بطاقات المجمع</button><button class="dbtn out" data-act="d-visitors">${icon("list")}طباعة قائمة زوار اليوم</button></div></div>`;
     }
     let html = `<div class="d-top"><span class="brandline"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M8 34V8h24v26" fill="none" stroke="#C2502F" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/></svg>بوابة</span><small>إدارة مجمع ${COMPOUND}</small></div>
       <div class="d-shell"><nav class="d-nav" aria-label="أقسام اللوحة">${nav.map(([k, ic, l]) => `<button data-act="d-nav" data-v="${k}" data-tour="d-nav-${k}" ${d.page === k ? 'aria-current="page"' : ""}>${icon(ic)}${l}</button>`).join("")}</nav>
@@ -970,19 +1235,19 @@ tr.new td { background: var(--successSoft); }
     const el = document.getElementById("guide");
     if (UI.mode === "free") {
       el.innerHTML = `<div class="step-row"><div class="step-text"><div class="step-meta"><span class="where">${icon("hand")}تجربة حرة</span></div>
-        <p>كل الشاشات متصلة: سجّل زائرًا أو توصيلًا من هاتف الساكن، وأدخله من البوابة، وتابع كل شيء في لوحة الإدارة. وجرّب «السوق» و«الاقتراحات» من هاتف الساكن، وردّ على الاقتراحات من لوحة الإدارة. جرّب أيضًا زر «متصل» في جهاز البوابة لمحاكاة انقطاع الاتصال ثم عودته، أو «إلغاء» تصريح فعّال من هاتف الساكن.</p></div>
+        <p>كل الشاشات متصلة: سجّل زائرًا أو توصيلًا من هاتف الساكن، وأدخله من البوابة، وتابع كل شيء في لوحة الإدارة. وجرّب «السوق» و«الاقتراحات» و«الصيانة» من هاتف الساكن، و«زائر بلا تصريح» من البوابة (للوحدة 12 يجيب الهاتف، ولغيرها يتصل الموظف)، و«الرسوم» و«إعداد المجمع» من لوحة الإدارة. جرّب أيضًا زر «متصل» في جهاز البوابة لمحاكاة انقطاع الاتصال ثم عودته، أو «إلغاء» تصريح فعّال من هاتف الساكن.</p></div>
         <div class="step-btns"><button class="btn out" data-act="mode" data-v="tour">${icon("route")}ابدأ الجولة الموجّهة</button></div></div>`;
       return;
     }
     if (UI.step >= STEPS.length) {
       el.innerHTML = `<div class="finish"><h2 style="font-size:20px">انتهت الجولة</h2>
-        <p style="margin:0">رأيت سبع حالات يومية تمر عبر الأجهزة الثلاثة. وهذا ما يعمل في المنتج اليوم أيضًا:</p>
-        <ul><li>لوحة لمالك المنصة: إنشاء المجمعات وإداراتها، وإيقاف مجمع مؤقتًا</li><li>تفعيل حساب الساكن برمز لمرة واحدة ثم رمز سري من 6 أرقام</li><li>عزل كامل لبيانات كل مجمع عن غيره في قاعدة البيانات</li><li>عمل البوابة دون اتصال ومزامنتها عند عودته</li><li>زائر غير مسجّل: يُسأل أهل الوحدة من التطبيق أو بالاتصال</li><li>تصاريح دورية وللعمّال وللمناسبات</li><li>طلبات الصيانة مع الصور والتقييم</li><li>دليل الخدمات وسياسة التوصيل لكل وحدة</li><li>استيراد الوحدات والسكان من Excel وقائمة زوار اليوم المطبوعة</li></ul>
+        <p style="margin:0">رأيت عشر حالات يومية تمر عبر الأجهزة الثلاثة. كلها تعمل في المنتج اليوم ما عدا «الرسوم»، فهي قادمة. وهذا ما يعمل أيضًا:</p>
+        <ul><li>تفعيل حساب الساكن برمز لمرة واحدة ثم رمز سري من 6 أرقام</li><li>عزل كامل لبيانات كل مجمع عن غيره في قاعدة البيانات</li><li>عمل البوابة دون اتصال ومزامنتها عند عودته</li><li>تصاريح دورية وللعمّال مع تسجيل الخروج</li><li>دليل الخدمات وسياسة التوصيل لكل وحدة</li><li>استيراد الوحدات والسكان من Excel وطباعة بطاقات التفعيل: صفحة «إعداد المجمع» في اللوحة</li><li>قائمة زوار اليوم المطبوعة لموظف البوابة</li></ul>
         <div class="step-btns"><button class="btn" data-act="mode" data-v="free">${icon("hand")}تجربة حرة</button><button class="btn out" data-act="reset">${icon("rotate-ccw")}إعادة الجولة</button></div></div>`;
       return;
     }
     const st = STEPS[UI.step];
-    el.innerHTML = `<div class="chapters">${CHAPTERS.map((c, i) => `<span class="chip ${i < st.ch ? "done" : i === st.ch ? "now" : ""}">${i < st.ch ? icon("check") : ""}${i + 1}. ${c}</span>`).join("")}</div>
+    el.innerHTML = `<div class="chapters">${CHAPTERS.map((c, i) => `<span class="chip ${i < st.ch ? "done" : i === st.ch ? "now" : ""}${i === SOON_CH ? " soon-chip" : ""}">${i < st.ch ? icon("check") : ""}${i + 1}. ${c}</span>`).join("")}</div>
       <div class="progress" aria-hidden="true"><i style="width:${(UI.step / STEPS.length) * 100}%"></i></div>
       <div class="step-row"><div class="step-text"><div class="step-meta"><span class="num">الخطوة ${UI.step + 1} من ${STEPS.length}</span><span class="where">${icon(st.dev === "phone" ? "smartphone" : st.dev === "gate" ? "tablet" : "monitor")}${DEVNAME[st.dev]}</span></div>
         <p>${st.text}</p></div>
@@ -1049,7 +1314,30 @@ tr.new td { background: var(--successSoft); }
     "g-courier": () => { S.gate.courier = { partner: null, unit: "" }; },
     "g-courier-close": () => { S.gate.courier = null; },
     "g-partner": (d) => { S.gate.courier.partner = d.id; },
-    "g-key": (d) => { const c = S.gate.courier; if (d.v === "del") c.unit = c.unit.slice(0, -1); else if (d.v === "clr") c.unit = ""; else if (c.unit.length < 4) c.unit += d.v; },
+    "r-wallow": (d) => decideWalkin(d.id, true, "app"),
+    "r-wreject": (d) => decideWalkin(d.id, false, "app"),
+    "r-tickets": () => { S.phone.screen = "tickets"; },
+    "r-tnew": () => openTicketNew(),
+    "r-tcat": (d) => { S.tdraft.cat = d.v; },
+    "r-tphoto": () => { S.tdraft.photo = !S.tdraft.photo; },
+    "r-tsend": () => submitTicket(),
+    "r-rate": (d) => rateTicket(d.id, Number(d.v)),
+    "r-fees": () => { S.phone.screen = "fees"; },
+    "g-walkin": () => openWalkin(),
+    "g-walkin-close": () => { S.gate.walkin = null; },
+    "g-wsend": () => sendWalkin(),
+    "g-wcall": () => toast("gate", "في المنتج يُطلب رقم أحد السكان لحظة الضغط ويُفتح الاتصال، ولا يظهر الرقم للموظف ولا يُحفظ."),
+    "g-wcallok": (d) => decideWalkin(d.id, true, "call"),
+    "g-wreject": (d) => decideWalkin(d.id, false, "call"),
+    "g-wadmit": (d) => walkinAdmit(d.id),
+    "g-ev": (d) => eventTap(d.id, Number(d.v)),
+    "d-tset": (d) => setTicket(d.id, d.v),
+    "d-pay": (d) => recordPayment(d.v),
+    "d-import": () => { S.setup.imported = true; toast("dash", "استُوردت 245 وحدة و309 ساكنين. الصفوف الثلاثة ذات الأخطاء لم تُستورد."); },
+    "d-sample": () => toast("dash", "في المنتج يُنزَّل ملف Excel فارغ بالأعمدة المطلوبة."),
+    "d-cards": () => toast("dash", "في المنتج يُفتح ملف PDF ببطاقات كل السكان غير المفعّلين، جاهز للطباعة."),
+    "d-visitors": () => toast("dash", "في المنتج تُطبع قائمة زوار اليوم المسجّلين لموظف البوابة، احتياطًا عند انقطاع الكهرباء."),
+    "g-key": (d) => { const c = S.gate.courier || S.gate.walkin; if (d.v === "del") c.unit = c.unit.slice(0, -1); else if (d.v === "clr") c.unit = ""; else if (c.unit.length < 4) c.unit += d.v; },
     "g-courier-admit": () => courierAdmit(),
     "g-courier-hold": () => courierHold(),
     "g-ack": () => acknowledge(),
@@ -1097,6 +1385,9 @@ tr.new td { background: var(--successSoft); }
     else if (k === "s-title") S.sdraft.title = v;
     else if (k === "s-body") S.sdraft.body = v;
     else if (k === "s-anon") S.sdraft.anon = v;
+    else if (k === "w-name") { if (S.gate.walkin) S.gate.walkin.name = v; }
+    else if (k === "t-body") S.tdraft.body = v;
+    else if (k === "t-reply") S.treply[ev.target.dataset.id] = v;
     else if (k === "r-body" || k === "r-status") { const id = ev.target.dataset.id; S.rdraft[id] = S.rdraft[id] || { status: "studying", body: "" }; S.rdraft[id][k === "r-body" ? "body" : "status"] = v; }
   });
   document.addEventListener("keydown", (ev) => {
